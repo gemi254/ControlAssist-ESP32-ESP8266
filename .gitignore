@@ -1,0 +1,7 @@
+/test/
+/debug.cfg
+/debug_custom.json
+/esp32.svd
+.pio/
+.vscode/
+platformio.ini

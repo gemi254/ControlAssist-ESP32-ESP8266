@@ -1,0 +1,18 @@
+{
+    "name": "ControlAssist",
+    "keywords": "webpage, html, websockets, control",
+    "description": "Multi-platform library for controlling html elements at runtime with websockets.",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/gemi254/ControlAssist-ESP32-ESP8266.git"
+    },
+    "version": "1.0.0",
+    "homepage": "https://github.com/gemi254/ControlAssist-ESP32-ESP8266",
+    "examples": "examples/*/*.ino",
+    "frameworks": "arduino",
+    "platforms": [
+        "atmelavr",
+        "espressif8266",
+        "espressif32"
+    ]
+}

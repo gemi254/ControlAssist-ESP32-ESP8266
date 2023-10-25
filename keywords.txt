@@ -1,0 +1,27 @@
+
+
+###########################################
+# Syntax Coloring Map For controlAssist-library
+###########################################
+
+###########################################
+# Datatypes (KEYWORD1)
+###########################################
+
+controlAssist KEYWORD1
+
+###########################################
+# Methods and Functions (KEYWORD2)
+###########################################
+
+begin KEYWORD2
+bind KEYWORD2
+put KEYWORD2
+set KEYWORD2
+setGlobalCallback KEYWORD2
+setHtmlHeaders KEYWORD2
+setHtmlBody KEYWORD2
+setHtmlFooter KEYWORD2
+getInitScript KEYWORD2
+setGlobalCallback KEYWORD2
+sendHtml KEYWORD2
