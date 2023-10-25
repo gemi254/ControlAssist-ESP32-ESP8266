@@ -17,11 +17,12 @@ Esp device can also transmit changes to the html page elements using control cha
 * Automate **variables** and html **elements** in a typical ``ESP32/ESP8266`` project using websockets communication.
 * Auto **synchronize** ESP32/ESP8266 internal **variables** with webpage elements.
 * Automatically generate required webpage scripts to handle connections and changes.
-* Support bi-direction hi speed communication
-* Allow mult-iclient applications.
+* Support bi-direction hi-speed communication
+* Allow mult-client applications.
 
 ## How it works
 Define your internal page html code.
+
 ``PROGMEM const char HTML_HEADERS[] = R"=====(<!DOCTYPE HTML>)=====";``
 ``PROGMEM const char HTML_BODY[] = R"=====(<body></body>)=====";``
 ``PROGMEM const char HTML_FOOTER[] = R"=====(</htmll>)=====";``
