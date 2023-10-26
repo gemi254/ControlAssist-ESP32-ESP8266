@@ -59,7 +59,7 @@ PROGMEM const char CONTROLASSIST_SCRIPT_WEBSOCKETS_CLIENT[] = R"=====(
 /* * * * WebSockets functions * * * */
 //const wsServer = "ws://10.1.0.169:81/";
 const wsServer = "ws://" + document.location.host + ":81/";
-const dbg = true;
+const dbg = false;
 let ws = null;
 let hbTimer = null;
 let refreshInterval = 15000;
