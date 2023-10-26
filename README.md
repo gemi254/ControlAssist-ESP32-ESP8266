@@ -18,6 +18,7 @@ Esp device can also transmit changes to the html page elements using control cha
 * Automatically generate required **webpage scripts** to handle connections and changes.
 * Support bi-direction hi-speed communication
 * Allow **mult-client** applications.
+* Support websockets over **AP** connections.
 
 ## How it works
 Define your internal page html code.
