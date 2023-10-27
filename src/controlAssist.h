@@ -3,7 +3,7 @@
 
 #include <WebSocketsServer.h>
 
-#define CT_CLASS_VERSION "1.0.1a"        // Class version
+#define CT_CLASS_VERSION "1.0.1"        // Class version
 
 // Define Platform libs
 #if defined(ESP32)
@@ -14,7 +14,6 @@
 
 #include "espLogger.h"
 
-//typedef std::function<void(uint8_t num, uint8_t * payload, size_t length)> WebSocketServerEventG;
 typedef std::function<void(uint8_t num)> WebSocketServerEventG;
 typedef std::function<void(void)> WebSocketServerEvent;
    
@@ -80,6 +79,8 @@ class ControlAssist{
     String getInitScript();
     // Render html to client
     void sendHtml(WEB_SERVER &server);
+    // Get number of connected clients
+    uint8_t getClientsNum() { return _clientsNum; }
   private:
     // Start websockets
     void startWebSockets();
@@ -98,6 +99,7 @@ class ControlAssist{
     bool _wsEnabled;
     static WebSocketsServer *_pWebSocket;
     static WebSocketServerEventG _ev;
+    static uint8_t _clientsNum;
 };
 
 #endif // _CONTROL_ASSIST_H
