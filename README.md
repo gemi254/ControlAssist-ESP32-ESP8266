@@ -6,6 +6,7 @@ A library allowing linking of **html elements** to **sketch variables** on pages
 
 In a typical webpage, html **elements** like ``input box``, ``textbox``, ``range``, ``checkbox`` can be **binded** with ControlAssist internal variables using their unique **html ids** in order to associate their values. A **vectors** list will be generated to hold all associated elements keys and their values.
 
+## How it works
 Every time an element is changing its value in the **web page**, a websocket message will be send to server and ControlAssist will update its internal value. Also if you change a ControlAssist value inside your sketch, a message will be automatically send to client and the value of the associated html element will be updated.
 
 ControlAssist will automatically add JavaScript **onChange** handlers to the web page html code, so the binded elements will transmit their changes automatically to the server. It will also add JavaScript code to handle **incoming** websockets messages so the values of the binded html elements can be updated.
@@ -14,13 +15,19 @@ ESP device will transmit **changes** to all connected **websocket** clients. Thi
 
 ## Features
 * Automate **variables** and html **elements** in a typical ``ESP32/ESP8266`` project using websockets communication.
+* Automatic reconnect on wifi disconnections.
 * Auto **synchronize** ESP32/ESP8266 internal **variables** with webpage elements.
 * Automatically generate required **webpage scripts** to handle connections and changes.
 * Support bi-directional hi-speed communications.
 * Allow **mult-client** applications. (One esp, multiple pages)
 * Support websockets over **AP** connections.
 
-## How it works
+
+<p align="center">
+  <img src="docs/scope.png">
+</p>
+
+## How it use
 Define your internal page html code.
 
 ```
@@ -84,6 +91,7 @@ html_id.addEventListener("wsChange", (event) => {
 });
 ```
 See example ``ControlAssist-Gauge.ino``
+
 <p align="center">
   <img src="docs/gauge.png">
 </p>
