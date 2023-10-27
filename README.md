@@ -1,23 +1,23 @@
 # ControlAssist
-Multi-platform library for controlling html elements in a esp webpage at runtime using websockets.
+Multi-platform library for controlling html elements in a esp webpages at runtime using websockets.
 
 ## Description
 A library allowing linking of **html elements** to **sketch variables** on pages hosted on **esp32/esp8266** devices. It uses a **websocket server** on the esp **device** and a JavaScript **webocket client** implementation on the web **page** allowing bi-directional real-time communication between **device** and **page**. 
 
 In a typical webpage, html **elements** like ``input box``, ``textbox``, ``range``, ``checkbox`` can be **binded** with ControlAssist internal variables using their unique **html ids** in order to associate their values. A **vectors** list will be generated to hold all associated elements keys and their values.
 
-Every time an element is changing its value in the web page, a websocket message will be send to server and ControlAssist will update its internal value. Also if you change a ControlAssist value inside your sketch, a message will be automatically send to client and the value of the associated html element will be updated.
+Every time an element is changing its value in the **web page**, a websocket message will be send to server and ControlAssist will update its internal value. Also if you change a ControlAssist value inside your sketch, a message will be automatically send to client and the value of the associated html element will be updated.
 
-ControlAssist will automatically add JavaScript **onChange** handlers to the web page html code, so the binded elements will transmit their changes automatically to the server. It will also add code to handle incoming websockets messages to update the values of the html elements.
+ControlAssist will automatically add JavaScript **onChange** handlers to the web page html code, so the binded elements will transmit their changes automatically to the server. It will also add JavaScript code to handle **incoming** websockets messages so the values of the binded html elements can be updated.
 
-Esp device can also transmit changes to the html page elements using control channels in order to change the values of html page.
+ESP device will transmit **changes** to all connected **websocket** clients. This will make posible to have one ESP device and multiple Web pages opened from different places inside the network, receiving and sending changes.
 
 ## Features
 * Automate **variables** and html **elements** in a typical ``ESP32/ESP8266`` project using websockets communication.
 * Auto **synchronize** ESP32/ESP8266 internal **variables** with webpage elements.
 * Automatically generate required **webpage scripts** to handle connections and changes.
-* Support bi-direction hi-speed communication
-* Allow **mult-client** applications.
+* Support bi-directional hi-speed communications.
+* Allow **mult-client** applications. (One esp, multiple pages)
 * Support websockets over **AP** connections.
 
 ## How it works
@@ -65,6 +65,9 @@ Controlling your elements
 + Read current value of html element
   - `html_val = ctrl["html_id"]`
 
++ Handle changes inside your code
+  - `void globalChangeFuncion(uint8_t no){  String key = ctrl.getKey(no); int val = ctrl[key].toInt() }`
+  
 + Inside your main loop() function Handle websockets server connections
   - `ctrl.loop();`
 
