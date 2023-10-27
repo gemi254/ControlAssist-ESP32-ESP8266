@@ -171,7 +171,7 @@ hall.ctrl.addEventListener("wsChange", (event) => {
 #else
 PROGMEM const char HTML_BODY[] = R"=====(
 <body translate="no">
-<div style="width: 100%; text-align: center;"><h1>ESP32 system monitor</h1></div>
+<div style="width: 100%; text-align: center;"><h1>ESP8266 system monitor</h1></div>
 <div class="container center">
     <div class="gauge" id="rssi" style="width: 200px; --rotation:0deg; --color:#e4a229; --background:#e9ecef;">
         <div class="percentage"></div>
