@@ -19,6 +19,7 @@ WebSocketsServer *ControlAssist::_pWebSocket = NULL;
 std::vector<ctrlPairs> ControlAssist::_ctrls;
 std::vector<String> ControlAssist::_chnToKeys;
 WebSocketServerEventG ControlAssist::_ev;
+uint8_t ControlAssist::_clientsNum;
 
 ControlAssist::ControlAssist() { 
   _pWebSocket = NULL; 
@@ -27,6 +28,7 @@ ControlAssist::ControlAssist() {
   _html_headers = CONTROLASSIST_HTML_HEADER;
   _html_body =  CONTROLASSIST_HTML_BODY;
   _html_footer = CONTROLASSIST_HTML_FOOTER;
+  _clientsNum = 0;
   _port = 81;
 }
 
@@ -193,9 +195,9 @@ int ControlAssist::bind(const char* key){
   sort();
   _chnToKeys.push_back(key);
   String keyHtml ( "id=\"" + String(key) + "\"" );
-  //if (strstr(_html_body, keyHtml.c_str()) == NULL) {
-   // LOG_E("Key: %s not found in html\n", key);
-  //}
+  /*if (strstr(_html_body, keyHtml.c_str()) == NULL) {
+    LOG_E("Key: %s not found in html\n", key);
+  }*/
   return (int)_ctrls.size();
 }
 // Bind a html control with id = key to a control variable and an event function
@@ -236,12 +238,13 @@ void ControlAssist::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload
           break;
       case WStype_DISCONNECTED:
           LOG_E("Websocket [%u] Disconnected!\n", num);
+          _clientsNum--;
           break;
       case WStype_CONNECTED:
           {
             IPAddress ip = _pWebSocket->remoteIP(num);
             LOG_I("Websocket [%u] connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-
+            _clientsNum++;
             // send message to client
             _pWebSocket->sendTXT(num, "0\tCon ");
           }
@@ -256,9 +259,11 @@ void ControlAssist::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload
          
             int no = getKeyPos(_chnToKeys[id]);
             _ctrls[no].val = String(val.c_str());
+            //Call control change handler
             if(_ctrls[no].ev) {
               _ctrls[no].ev();
             }
+            //Call global change handler
             if(_ev){
               _ev(id);
             }
