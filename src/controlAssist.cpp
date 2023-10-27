@@ -12,7 +12,7 @@
 
 #include <WebSocketsServer.h>
 #include "controlAssistPMem.h" //Memory static valiables (html pages)
-#define LOGGER_LOG_LEVEL 3     //Set log level for this module
+#define LOGGER_LOG_LEVEL 4     //Set log level for this module
 #include "controlAssist.h"
 
 WebSocketsServer *ControlAssist::_pWebSocket = NULL;
@@ -156,7 +156,7 @@ int ControlAssist::getKeyPos(String key) {
   );
   int keyPos = std::distance(_ctrls.begin(), lower); 
   if (key == _ctrls[keyPos].key) return keyPos;
-  else LOG_D("Key %s not exist\n", key.c_str()); 
+  else LOG_V("Key %s not exist\n", key.c_str()); 
   return -1; // not found
 }
 
