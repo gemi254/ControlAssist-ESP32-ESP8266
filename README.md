@@ -83,6 +83,10 @@ html_id.addEventListener("wsChange", (event) => {
     return false;
 });
 ```
+See example ``ControlAssist-Gauge.ino``
+<p align="center">
+  <img src="docs/gauge.png">
+</p>
 
 ## Logging and debugging with log level
 In you application you use **LOG_E**, **LOG_W**, **LOG_I**, **LOG_D** macros instead of **Serial.prinf** to print your messages. **ControlAssist** displays these messages with **timestamps** 
