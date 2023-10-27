@@ -122,8 +122,7 @@ function handleWsMessage(msg){
   }else{
     elm.value = val;
   }
-  var event = new Event('wsChange');
-  
+  var event = new Event('wsChange');  
   elm.dispatchEvent(event);
 }
 
