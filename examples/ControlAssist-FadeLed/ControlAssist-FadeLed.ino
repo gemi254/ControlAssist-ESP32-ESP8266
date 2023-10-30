@@ -11,7 +11,7 @@
 
 
 #define LOGGER_LOG_LEVEL 5
-#include <controlAssist.h>  // Control assist class
+#include <ControlAssist.h>  // Control assist class
 
 // Put connection info here. 
 // On empty an AP will be started
