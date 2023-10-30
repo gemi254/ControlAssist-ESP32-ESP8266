@@ -13,7 +13,7 @@
 #include <WebSocketsServer.h>
 #include "controlAssistPMem.h" //Memory static valiables (html pages)
 #define LOGGER_LOG_LEVEL 4     //Set log level for this module
-#include "controlAssist.h"
+#include "ControlAssist.h"
 
 WebSocketsServer *ControlAssist::_pWebSocket = NULL;
 std::vector<ctrlPairs> ControlAssist::_ctrls;
