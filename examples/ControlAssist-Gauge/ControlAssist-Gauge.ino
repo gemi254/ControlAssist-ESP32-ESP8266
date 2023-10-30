@@ -21,7 +21,7 @@ uint8_t temprature_sens_read();
 
 
 #define LOGGER_LOG_LEVEL 5
-#include <controlAssist.h>  // Control assist class
+#include <ControlAssist.h>  // Control assist class
 
 unsigned long pingMillis = millis();  // Ping 
 const char st_ssid[]=""; // Put connection info here
