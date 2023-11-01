@@ -1,10 +1,12 @@
 #if defined(ESP32)
   #include <WebServer.h>
   WebServer server(80);
-  #define ADC_PIN 36
+  #include <ESPmDNS.h>  
+  #define ADC_PIN 36  
 #else
   #include <ESP8266WebServer.h>  
-  ESP8266WebServer  server(80);  
+  ESP8266WebServer  server(80);
+  #include <ESP8266mDNS.h>
   #define ADC_PIN A0
 #endif
 
@@ -105,7 +107,7 @@ void setup() {
     String mac = WiFi.macAddress();
     mac.replace(":","");
     String hostName = "ControlAssist_" + mac.substring(6);
-    WiFi.mode(WIFI_AP_STA);
+    WiFi.mode(WIFI_AP);
     WiFi.softAP(hostName.c_str(),"",1);
     LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());      
     if (MDNS.begin(hostName.c_str()))  LOG_I("AP MDNS responder Started\n");     
@@ -132,7 +134,6 @@ void setup() {
 }
 
 void loop() {
-  if(WiFi.status() != WL_CONNECTED ) return;
   //Change html control values
   if (millis() - pingMillis >= 3000){  
     ctrl.put("span_ctrl", analogRead(ADC_PIN) );
@@ -151,6 +152,12 @@ void loop() {
     buttonState = !buttonState;
     pingMillis = millis();
   }
-  ctrl.loop();
+  
+  #if not defined(ESP32)
+    if(MDNS.isRunning()) MDNS.update(); //Handle MDNS
+  #endif
+  //Handler webserver clients
   server.handleClient();
+  //Handle websockets
+  ctrl.loop();
 }
