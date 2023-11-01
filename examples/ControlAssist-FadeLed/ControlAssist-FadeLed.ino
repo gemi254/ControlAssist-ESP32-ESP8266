@@ -175,8 +175,13 @@ void setup() {
 }
 
 void loop() {
-  ctrl.loop();
+  #if not defined(ESP32)
+    if(MDNS.isRunning()) MDNS.update(); //Handle MDNS
+  #endif
+  //Handler webserver clients
   server.handleClient();
+  //Handle websockets
+  ctrl.loop();;
 }
 
 
