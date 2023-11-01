@@ -18,7 +18,6 @@ const char st_ssid[]="";
 const char st_pass[]="";
 unsigned long pingMillis = millis();  // Ping 
 
-
 ControlAssist ctrl; //Control assist class
 
 //Handle web server root request and send html to client
@@ -30,7 +29,8 @@ void setup() {
   Serial.begin(115200);
   Serial.print("\n\n\n\n");
   Serial.flush();
-  LOG_I("Starting..\n");  
+  LOG_I("Starting..\n");
+    
   //Connect WIFI?
   if(strlen(st_ssid)>0){
     LOG_E("Connect Wifi to %s.\n", st_ssid);
@@ -71,6 +71,11 @@ void setup() {
 }
 
 void loop() {
-  ctrl.loop();
+  #if not defined(ESP32)
+    if(MDNS.isRunning()) MDNS.update(); //Handle MDNS
+  #endif
+  //Handler webserver clients
   server.handleClient();
+  //Handle websockets
+  ctrl.loop();
 }
