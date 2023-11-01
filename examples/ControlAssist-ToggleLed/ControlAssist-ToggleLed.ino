@@ -206,15 +206,21 @@ void setup() {
 
 
 void loop() {
+  #if not defined(ESP32)
+    if(MDNS.isRunning()) MDNS.update(); //Handle MDNS
+  #endif
+  //Handler webserver clients
+  server.handleClient();
+  //Handle websockets
+  ctrl.loop();
+
   if (millis() - pingMillis >= 5000){  
     ledState = !ledState;
     toggleLed(ledState);
     //Set the ledState and send a websocket update
     ctrl.put("toggleLed", ledState );
     pingMillis = millis();
-  }
-  ctrl.loop();
-  server.handleClient();
+  }  
 }
 
 
