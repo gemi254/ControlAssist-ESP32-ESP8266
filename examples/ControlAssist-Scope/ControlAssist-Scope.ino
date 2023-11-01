@@ -94,20 +94,21 @@ void setup() {
 #endif
 }
 
-void loop() {
-  //if(WiFi.status() != WL_CONNECTED ) return;
-  
-  //Handler webserver clients
-  server.handleClient();
-  //Handle websockets
-  ctrl.loop();
+void loop() { // Run repeatedly
 
-  // Run repeatedly:
   if (millis() - pingMillis >= speed){
     //Set control at position to value  
     ctrl.set(adc_pos, analogRead(ADC_PIN), true);
     pingMillis = millis();
   }
+  
+  #if not defined(ESP32)
+    if(MDNS.isRunning()) MDNS.update(); //Handle MDNS
+  #endif
+  //Handler webserver clients
+  server.handleClient();
+  //Handle websockets
+  ctrl.loop();
 }
 
 
