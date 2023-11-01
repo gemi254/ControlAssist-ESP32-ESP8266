@@ -10,7 +10,6 @@ uint8_t temprature_sens_read();
   #include <WebServer.h>
   WebServer server(80);  
   #include <ESPmDNS.h>  
-
 #else
   #include <ESP8266WiFi.h>
   #include <ESP8266WebServer.h>  
@@ -18,7 +17,6 @@ uint8_t temprature_sens_read();
   #include <ESP8266mDNS.h>
   ADC_MODE(ADC_VCC);
 #endif
-
 
 #define LOGGER_LOG_LEVEL 5
 #include <ControlAssist.h>  // Control assist class
@@ -75,8 +73,10 @@ void setup() {
     mac.replace(":","");
     String hostName = "ControlAssist_" + mac.substring(6);
     WiFi.mode(WIFI_AP_STA);
-    WiFi.softAP(hostName.c_str(),"",1);
-    LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());      
+    if(WiFi.softAP(hostName.c_str(),"",8))
+      LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());
+    else
+      LOG_E("Wifi AP SSID: %s FAILED!\n", WiFi.softAPSSID().c_str());      
     if (MDNS.begin(hostName.c_str()))  LOG_I("AP MDNS responder Started\n");     
   }
 
@@ -90,13 +90,13 @@ void setup() {
   ctrl.setHtmlBody(HTML_BODY);
   ctrl.bind("rssi");
   ctrl.bind("mem");
-#if defined(ESP32)  
+  #if defined(ESP32)  
   ctrl.bind("temp");
   ctrl.bind("hall");  
-#else
+  #else
   ctrl.bind("vcc");
   ctrl.bind("hall");  
-#endif  
+  #endif  
   //Every time a variable changed changeHandler will be called   
   ctrl.setGlobalCallback(changeHandler);
   ctrl.begin();
@@ -117,20 +117,28 @@ int getMemPerc(){
   return round(percentageHeapUsed);
 }
 #endif
+
 void loop() {
+  //Handler webserver clients
+  server.handleClient();
+  //Handle websockets
+  ctrl.loop();
+  #if not defined(ESP32)
+    if(MDNS.isRunning()) MDNS.update(); //Handle MDNS
+  #endif
   //Update html control values
   if (millis() - pingMillis >= DELAY_MS){  
     ctrl.put("rssi", String( WiFi.RSSI()) );
     ctrl.put("mem", String( getMemPerc()) );    
-#if defined(ESP32)    
+    #if defined(ESP32)    
     ctrl.put("temp", String( ((temprature_sens_read() - 32) / 1.8), 1 )); 
     ctrl.put("hall", String( hallRead()) );
-#else
+    #else
     ctrl.put("vcc", String( ESP.getVcc() ));    
-#endif    
+    #endif    
     buttonState = !buttonState;
     pingMillis = millis();
   }
-  ctrl.loop();
-  server.handleClient();
-}
+
+
+ }
