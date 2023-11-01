@@ -38,8 +38,8 @@ PROGMEM const char HTML_FOOTER[] = R"=====(</htmll>)=====";
 
 ## ControlAssist init functions
 Define and Initialize you class 
-+ include the **controlAssist**  class
-  - `#include <controlAssist.h>  //ControlAssist class`
++ include the **ControlAssist**  class
+  - `#include <ControlAssist.h>  //ControlAssist class`
 
 + Define your static instance
   - `ControlAssist ctrl;              //Default port 81 `
@@ -112,7 +112,7 @@ You can define log level for each module
 
 ## Compile
 Download library files and place them on ./libraries directory under ArduinoProjects
-Then include the **controlAssist.h** in your application and compile..
+Then include the **ControlAssist.h** in your application and compile..
 
 + compile for arduino-esp3 or arduino-esp8266.
 + In order to compile you must install **WebSocketsServer** library.
