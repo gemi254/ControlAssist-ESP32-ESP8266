@@ -8,20 +8,18 @@ var ctrlNames = []
 function updateKeys(event){
   if(event.type=="wsChange") return;
   const e = event.target;
+  
   const value = e.value.trim();
   const et = event.target.type;
-  // input fields of given class 
-  if(e.nodeName == 'TEXTAREA'){
-      updateKey(e.id, value, true);
-  }else{
-    if (e.type === 'checkbox'){ 
-        updateKey(e.id, e.checked ? 1 : 0);
-    }else {
-        updateKey(e.id, value);
-    }
+  
+  if (e.type === 'checkbox'){ 
+      updateKey(e.id, e.checked ? 1 : 0);
+  }else {
+      updateKey(e.id, value);
   }
+
 }
-function updateKey(key, value, isTxtArea = false) {          
+function updateKey(key, value) {          
   if(value == null ) return;  
   sendWsTxt(ctlbyName[key] + "\t" + value);
 }
@@ -36,7 +34,7 @@ function initWebSocketCtrls(){
     if(!elm){
       ctrlNames.push([key, null]);
     }else{
-      if(elm.type === "button"){        
+      if(elm.type === "button"){  //|| elm.type === "submit"){        
         elm.addEventListener("click", updateKeys);     
       }else if(elm.type === "checkbox"){        
         elm.addEventListener("change", updateKeys);
@@ -103,7 +101,7 @@ function onWsOpen(event) {
   if(dbg) console.log("onWsOpen");
   wsHeartBeat();
 }
-//Handle websocket messages
+// Handle websocket messages
 function handleWsMessage(msg){   
   var itm = msg.split("\t");
   const key = ctlByNo[ itm[0] ];
@@ -165,7 +163,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
   /*{SUB_SCRIPT}*/
 })
 )=====";
-//Template for message page
+//Template for header of the html page
 PROGMEM const char CONTROLASSIST_HTML_HEADER[] = R"=====(
 <!DOCTYPE HTML>
 <html lang="en">
@@ -176,12 +174,13 @@ PROGMEM const char CONTROLASSIST_HTML_HEADER[] = R"=====(
   <title>Control Assist</title>                        
 </head>
 )=====";
-//Template for message page
+//Template for body of the html page
 PROGMEM const char CONTROLASSIST_HTML_BODY[] = R"=====(
 <body>
 <h1>Put your html code here</h1>
 </body>
 )=====";
+//Template for footer of the html page
 PROGMEM const char CONTROLASSIST_HTML_FOOTER[] = R"=====(
 </html>
 )=====";
