@@ -9,9 +9,16 @@
   #include <ESP8266mDNS.h>
 #endif
 
-PROGMEM const char CONTROLASSIST_HTML_HTML[] = R"=====(
+PROGMEM const char CONTROLASSIST_HTML_BODY[] = R"=====(
 <style>
- body{
+:root { 
+  --errColor: red;
+  --warnColor: orange;
+  --infoColor: gray;
+  --dbgColor: blue;
+  --vrbColor: green;
+}
+body{
   font-family: monospace;
   font-size: 0.7rem;
 }
@@ -26,11 +33,49 @@ PROGMEM const char CONTROLASSIST_HTML_SCRIPT[] = R"=====(
 <script>
 const logLine = document.getElementById("logLine"),
 logText = document.getElementById("logText")
+const root = getComputedStyle($(':root'));
 
+// Event listener for web sockets messages
 logLine.addEventListener("wsChange", (event) => {
   if(logText.innerHTML.length) logText.innerHTML += "<br>";
-  logText.innerHTML += event.target.value ;
+  let lines = event.target.value.split("<br>");
+  if(lines.length > 1){
+    for (i in lines){
+      logText.innerHTML += toColor(lines[i] );
+      if( i < lines.length - 1 ) logText.innerHTML += "<br>"
+    }
+  }else{
+    logText.innerHTML += toColor( event.target.value );
+  }
+  
+  if(isScrollBottom())
+    window.scrollTo({ left: 0, top: document.body.scrollHeight, behavior: "smooth" });
 });
+
+const isScrollBottom = () => {
+  let documentHeight = document.body.scrollHeight;
+  let currentScroll = window.scrollY + window.innerHeight;
+  let snap = 10; 
+  if(currentScroll + snap > documentHeight) {
+     return true;
+  }
+  return false;
+}
+
+const toColor = (line) => {
+  // Color dbg line according to its type
+  let colorVar = "";
+  if (line.includes(" E @")) colorVar = "errColor";
+  else if (line.includes("W @ ")) colorVar = "warnColor";
+  else if (line.includes("I @ ")) colorVar = "infoColor";
+  else if (line.includes("D @ ")) colorVar = "dbgColor";
+  else if (line.includes("V @ ")) colorVar = "vrbColor";
+
+  if (colorVar.length > 0) {
+    const color = root.getPropertyValue('--' + colorVar);
+    return "<font color=" + color + ">" + line + "</font>";
+  } else return line;
+}
 </script>
 </html>
 )=====";
@@ -105,7 +150,7 @@ void setup() {
   
   //Connect WIFI?
   if(strlen(st_ssid)>0){
-    LOG_E("Connect Wifi to %s.\n", st_ssid);
+    LOG_D("Connect Wifi to %s.\n", st_ssid);
     WiFi.mode(WIFI_STA);
     WiFi.begin(st_ssid, st_pass);
     uint32_t startAttemptTime = millis();
@@ -135,17 +180,17 @@ void setup() {
   //Setup webserver
   server.on("/", handleRoot);
   server.begin();
-  LOG_I("HTTP server started\n");
+  LOG_V("HTTP server started\n");
   //Setup control assist
-  ctrl.setHtmlBody(CONTROLASSIST_HTML_HTML);
+  ctrl.setHtmlBody(CONTROLASSIST_HTML_BODY);
   ctrl.setHtmlFooter(CONTROLASSIST_HTML_SCRIPT);
   ctrl.bind("logLine");
   ctrl.begin();
-  LOG_I("ControlAssist started.\n") 
+  LOG_V("ControlAssist started.\n") 
 }
 
 void loop() {
-  if (millis() - pingMillis >= 2000){
+  if (millis() - pingMillis >= 1000){
     debugMemory("Loop");
     pingMillis = millis();
   }
