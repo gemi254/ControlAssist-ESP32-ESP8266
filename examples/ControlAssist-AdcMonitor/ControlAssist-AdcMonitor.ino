@@ -18,7 +18,7 @@
 const char st_ssid[]=""; 
 const char st_pass[]="";
 unsigned long pingMillis = millis();  // Ping 
-int speed = 100;
+unsigned long speed = 40;
 bool isPlaying = false;
 #ifdef ESP32
 // ADC channel 1
@@ -57,7 +57,7 @@ void speedChange(){
 }
 // Change handler
 void changeOnOff(){
- LOG_V("changeOnOff  %i\n", ctrl["on-off"].toInt());
+ LOG_V("changeOnOff  %li\n", ctrl["on-off"].toInt());
  isPlaying = ctrl["on-off"].toInt();
 }
 
@@ -120,8 +120,22 @@ void setup() {
   static String htmlFooter(CONTROLASSIST_HTML_FOOTER);
   htmlFooter.replace("/*{SUB_SCRIPT}*/",barsScripts);
   ctrl.setHtmlFooter(htmlFooter.c_str());
+  
+  // Bind controls
   ctrl.bind("on-off", changeOnOff);
   ctrl.bind("speed", speedChange);
+  
+  // Set init values
+  ctrl.put("on-off", isPlaying, false);
+  ctrl.put("speed", speed, false);
+  
+  // Auto send key values on connection  
+  ctrl.setAutoSendOnCon("on-off",true);
+  ctrl.setAutoSendOnCon("speed",true);
+  
+  //Or Auto send theese vars on ws connection
+  //ctrl.setAutoSendOnCon(true);
+  
   initAdcadcPins();
   ctrl.begin();  
   LOG_I("ControlAssist started.\n");
