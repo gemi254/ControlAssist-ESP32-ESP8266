@@ -104,6 +104,44 @@ c.lineTo(canvas.width, canvas.height / 2);
 c.stroke();
 segmentWidth = canvas.width / datBitCount;
 
+//Power on off button handlers
+powerBtn.addEventListener("click", () => {
+  if (isPlaying) {
+    powerBtn.innerHTML = "Turn On";
+  } else {  
+    powerBtn.innerHTML = "Turn Off";
+  }
+  powerBtn.classList.toggle("on");
+  isPlaying = !isPlaying;
+  // Manually update the key on-off
+  updateKey('on-off',isPlaying ? 1 : 0 );
+  if (isPlaying) draw();
+});
+// Listen to ws events
+powerBtn.addEventListener("wsChange", (event) => {
+  isPlaying = event.target.value == "0" ? false : true;
+  if (isPlaying) {
+    powerBtn.innerHTML = "Turn Off";
+    powerBtn.classList.add("on");
+  } else {  
+    powerBtn.innerHTML = "Turn On";
+    powerBtn.classList.remove("on");
+  }
+  if (isPlaying) draw();  
+});
+
+// Speed slider handlers
+speedSlider.addEventListener("input", (event) => {
+  speed = event.target.value;
+  document.getElementById("speedValue").innerHTML = speed;
+});
+
+speedSlider.addEventListener("wsChange", (event) => {
+  speed = event.target.value;
+  document.getElementById("speedValue").innerHTML = speed;
+});
+
+// Gain slider handlers
 gainSlider.addEventListener("input", (event) => {
   gain = event.target.value;
   document.getElementById("gainValue").innerHTML = gain;
@@ -116,11 +154,6 @@ adc_val.addEventListener("wsChange", (event) => {
     return false;
 });
 
-speedSlider.addEventListener("input", (event) => {
-  speed = event.target.value;
-  document.getElementById("speedValue").innerHTML = speed;
-});
-
 const shiftRight = (collection, value) => { 
   collection.set(collection.subarray(0, -1), 1)
   collection.fill(value, 0, 1)
@@ -130,17 +163,6 @@ const shiftRight = (collection, value) => {
 const scale = (number, [inMin, inMax], [outMin, outMax]) => {
     return (number - inMin) / (inMax - inMin) * (outMax - outMin) + outMin;
 }
-
-powerBtn.addEventListener("click", () => {
-  if (isPlaying) {
-    powerBtn.innerHTML = "Turn On";
-  } else {  
-    powerBtn.innerHTML = "Turn Off";
-  }
-  powerBtn.classList.toggle("on");
-  isPlaying = !isPlaying;
-  if (isPlaying) draw();
-});
 
 const draw = () => {
   if(dbg) console.time("Draw");    
