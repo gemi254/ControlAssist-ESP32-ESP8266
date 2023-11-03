@@ -19,8 +19,8 @@
 const char st_ssid[]=""; 
 const char st_pass[]="";
 unsigned long pingMillis = millis();  // Ping 
-
-static unsigned int speed = 40;
+bool isPlaying = false;
+unsigned long speed = 40;
 static int adc_pos = -1;
 
 ControlAssist ctrl;
@@ -29,7 +29,11 @@ ControlAssist ctrl;
 void handleRoot(){
   ctrl.sendHtml(server);
 }
-
+// Change handler
+void changeOnOff(){
+ LOG_V("changeOnOff  %li\n", ctrl["on-off"].toInt());
+ isPlaying = ctrl["on-off"].toInt();
+}
 void speedChange(){
  LOG_V("speedChange  %s\n", ctrl["speed"].c_str());
  speed = ctrl["speed"].toInt();
@@ -81,9 +85,21 @@ void setup() {
   ctrl.setHtmlHeaders(HTML_HEADERS);
   ctrl.setHtmlBody(HTML_BODY);  
   ctrl.setHtmlFooter(HTML_SCRIPT);
+  // Bind controls
+  ctrl.bind("on-off", changeOnOff);
   ctrl.bind("speed", speedChange);
   ctrl.bind("adc_val");
-  //Store key position
+  
+  // Set init values
+  ctrl.put("on-off", isPlaying, false);
+  ctrl.put("speed", speed, false);
+
+  // Auto send key values on connection  
+  ctrl.setAutoSendOnCon("on-off",true);
+  ctrl.setAutoSendOnCon("speed",true);
+
+  //Store key position on adc_val for speed
+  ctrl.bind("adc_val");
   adc_pos = ctrl.getKeyPos("adc_val");
   
   ctrl.begin();
@@ -98,7 +114,8 @@ void loop() { // Run repeatedly
 
   if (millis() - pingMillis >= speed){
     //Set control at position to value  
-    ctrl.set(adc_pos, analogRead(ADC_PIN), true);
+    if(isPlaying)
+      ctrl.set(adc_pos, analogRead(ADC_PIN), true);
     pingMillis = millis();
   }
   
