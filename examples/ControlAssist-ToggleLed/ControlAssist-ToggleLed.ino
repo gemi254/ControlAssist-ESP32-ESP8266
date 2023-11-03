@@ -131,7 +131,7 @@ toggleLed.addEventListener("change", (event) => {
 toggleLed.addEventListener("wsChange", (event) => {
   changeLed(event.target.checked);
 });
-  
+ 
 </script>
 </body>
 )=====";
@@ -198,6 +198,9 @@ void setup() {
   //Setup control assist
   ctrl.setHtmlBody(HTML_BODY);
   ctrl.bind("toggleLed", ledChangeHandler);
+  //Auto send on connect
+  ctrl.setAutoSendOnCon("toggleLed", true);
+  ctrl.put("toggleLed",ledState);
   ctrl.begin();
   ctrl.dump(); 
   pinMode(LED_BUILTIN, OUTPUT);
