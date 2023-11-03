@@ -83,7 +83,7 @@ String ControlAssist::getKey(uint8_t channel){
 // Add vectors by key (name in confPairs)
 size_t ControlAssist::add(String key, String val){      
   size_t cnt = _ctrls.size();
-  ctrlPairs d = { key, "", cnt + 1, NULL };
+  ctrlPairs d = { key, "", cnt + 1, NULL, false };
   return add(d);
 }   
 // Add vectors pairs
@@ -109,9 +109,9 @@ bool ControlAssist::set(int keyPos, String val, bool forceSend) {
     return false;    
   } 
   // send message to client
-  if(forceSend || changed){     
+  if(_clientsNum > 0 && (forceSend || changed)){
     String payload = String(_ctrls[keyPos].readNo) + "\t" + _ctrls[keyPos].val;
-    _pWebSocket->broadcastTXT(payload);
+    if(_pWebSocket) _pWebSocket->broadcastTXT(payload);
     LOG_V("Send payload: %s\n", payload.c_str());
   } 
   return true; 
@@ -141,20 +141,50 @@ bool ControlAssist::put(String key, String val, bool forceSend, bool forceAdd) {
     return false;
   }
   //Send message to client
-  if(forceSend || changed){     
+  if(_clientsNum > 0 && (forceSend || changed)){
     String payload = String(_ctrls[keyPos].readNo) + "\t" + _ctrls[keyPos].val;
-    _pWebSocket->broadcastTXT(payload);
+    if(_pWebSocket) _pWebSocket->broadcastTXT(payload);
     LOG_V("Send payload: %s\n", payload.c_str());
   } 
   return true;
+}
+// Set the auto send on ws connection flag on key
+bool ControlAssist::setAutoSendOnCon(String key, bool send) {
+  int keyPos = getKeyPos(key);
+  if (keyPos >= 0 && (size_t)keyPos < _ctrls.size() ) {
+    _ctrls[keyPos].autoSendOnCon = send;
+    return true;
+  }
+  LOG_E("Set auto send failed on key: %s\n", key.c_str());
+  return false;
+} 
+// Set the auto send on ws connection flag on all keys
+void ControlAssist::setAutoSendOnCon(bool send) {
+  uint8_t row = 0;
+  while (row++ < _ctrls.size()) { 
+    _ctrls[row - 1].autoSendOnCon = send;
+  }
+}
+
+// On websocket connection send the keys with auto send flag to clients
+void ControlAssist::autoSendKeys(){
+  uint8_t row = 0;
+  while (row++ < _ctrls.size()) { 
+    LOG_D("Checking row: %s ,%i\n", _ctrls[row - 1].key.c_str(), _ctrls[row - 1].autoSendOnCon );
+    if(_ctrls[row - 1].autoSendOnCon){
+      String payload = String(_ctrls[row - 1].readNo) + "\t" + _ctrls[row - 1].val;
+      if(_pWebSocket) _pWebSocket->broadcastTXT(payload);
+      LOG_D("Auto send payload: %s\n", payload.c_str());
+    }
+  }
 }
 
 // Get location of given key to retrieve other elements
 int ControlAssist::getKeyPos(String key) {
   if (_ctrls.empty()) return -1;
   auto lower = std::lower_bound(_ctrls.begin(), _ctrls.end(), key, [](
-      const ctrlPairs &a, const String &b) { 
-      return a.key < b;}
+    const ctrlPairs &a, const String &b) { 
+    return a.key < b;}
   );
   int keyPos = std::distance(_ctrls.begin(), lower); 
   if (key == _ctrls[keyPos].key) return keyPos;
@@ -166,8 +196,8 @@ int ControlAssist::getKeyPos(String key) {
 bool ControlAssist::getNextKeyVal(ctrlPairs &c) {
   static uint8_t row = 0;
   if (row++ < _ctrls.size()) { 
-      c = _ctrls[row - 1];
-      return true;
+    c = _ctrls[row - 1];
+    return true;
   }
   // end of vector reached, reset
   row = 0;
@@ -189,7 +219,7 @@ int ControlAssist::bind(const char* key){
     return -1;
   }
   size_t cnt = _ctrls.size();
-  ctrlPairs d = { key, "", cnt + 1, NULL };
+  ctrlPairs d = { key, "", cnt + 1, NULL, false};
   LOG_I("Binding key %s, %u\n", key, cnt); 
   _ctrls.push_back(d);
   sort();
@@ -203,7 +233,7 @@ int ControlAssist::bind(const char* key){
 // Bind a html control with id = key to a control variable and an event function
 int ControlAssist::bind(const char* key, WebSocketServerEvent ev){
   size_t cnt = _ctrls.size();
-  ctrlPairs d = { key, "", cnt + 1, ev };
+  ctrlPairs d = { key, "", cnt + 1, ev, false };
   LOG_I("Binding key %s, %i\n", key, cnt); 
   _ctrls.push_back(d);
   sort();
@@ -247,6 +277,8 @@ void ControlAssist::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload
             _clientsNum++;
             // send message to client
             _pWebSocket->sendTXT(num, "0\tCon ");
+            //Send keys selected
+            autoSendKeys();
           }
           break;
       case WStype_TEXT:
