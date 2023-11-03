@@ -23,6 +23,7 @@ struct ctrlPairs {
     String val;
     size_t readNo;
     WebSocketServerEvent ev;
+    bool autoSendOnCon;
 };
 
 class ControlAssist{ 
@@ -81,11 +82,17 @@ class ControlAssist{
     void sendHtml(WEB_SERVER &server);
     // Get number of connected clients
     uint8_t getClientsNum() { return _clientsNum; }
+    // Set the auto send on ws connection flag on key
+    bool setAutoSendOnCon(String key, bool send);
+    // Set the auto send on ws connection flag on all keys
+    void setAutoSendOnCon(bool send);
   private:
     // Start websockets
     void startWebSockets();
     // Stop websockets
     void stopWebSockets();
+    // Send the keys with auto send flag on ws connect
+    static void autoSendKeys();
     // Response to a websocket event
     static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
   private:
