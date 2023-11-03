@@ -45,19 +45,23 @@ Define and Initialize you class
   - `ControlAssist ctrl;              //Default port 81 `
   - `ControlAssist ctrl(port);        //Use port `
 
-+ in your setup function you must initialize control class by setting your webpage html code.
++ in your setup you must initialize control class by setting your webpage html code.
   - `ctrl.setHtmlFooter(HTML_SCRIPT);`
   - `ctrl.setHtmlHeaders(HTML_HEADERS);`
   - `ctrl.setHtmlBody(HTML_BODY);`
 
-+ in your setup function you must bind the html elements you want to control
++ in your setup you must bind the html elements you want to control
   - `ctrl.bind("html_id");` to link the html element
-  - `ctrl.bind("html_id", changeFunction);` if you need also to handle changes
-  
+  - `ctrl.bind("html_id", changeFunction);` if you need also to handle changes  
+
++ in your setup specify if you want ot auto send key values on websocket connection   
+  - `ctrl.setAutoSendOnCon("html_id",true /*enable / disable*/);`
+  - `ctrl.put("html_id", value);  // Set a default value to be send`
+
 + Define a web server handler to host your webpage 
   - `void handleRoot(){ ctrl.sendHtml(server); }`
 
-+ If you want to use a global callback function 
++ If you want to use a global callback function to handle key changes
   - `ctrl.setGlobalCallback(globalChangeFuncion);`
 
 + Start websockets server and listen for connections
@@ -72,7 +76,7 @@ Controlling your elements
 + Read current value of html element
   - `html_val = ctrl["html_id"]`
 
-+ Handle changes inside your code
++ Handle changes inside your code with a handler function
   - `void globalChangeFuncion(uint8_t no){  String key = ctrl.getKey(no); int val = ctrl[key].toInt() }`
   
 + Inside your main loop() function Handle websockets server connections
