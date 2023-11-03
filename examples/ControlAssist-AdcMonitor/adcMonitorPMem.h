@@ -120,7 +120,7 @@ const powerBtn = document.getElementById("on-off"),
     speedSlider = document.getElementById("speed"),
     gainSlider = document.getElementById("gain")
 
-
+//Power on off button handlers
 powerBtn.addEventListener("click", () => {
   if (isPlaying) {
     powerBtn.innerHTML = "Turn On";
@@ -129,19 +129,38 @@ powerBtn.addEventListener("click", () => {
   }
   powerBtn.classList.toggle("on");
   isPlaying = !isPlaying;
-  //Manually update the key on-off
+  // Manually update the key on-off
   updateKey('on-off',isPlaying ? 1 : 0 );
 });
 
+powerBtn.addEventListener("wsChange", (event) => {
+  isPlaying = event.target.value == "0" ? false : true;
+  if (isPlaying) {
+    powerBtn.innerHTML = "Turn Off";
+    powerBtn.classList.add("on");
+  } else {  
+    powerBtn.innerHTML = "Turn On";
+    powerBtn.classList.remove("on");
+  }  
+});
+
+// Gain slider handlers
 gainSlider.addEventListener("input", (event) => {
   gain = event.target.value;
   document.getElementById("gainValue").innerHTML = gain;
 });
 
+// Speed slider handlers
 speedSlider.addEventListener("input", (event) => {
   speed = event.target.value;
   document.getElementById("speedValue").innerHTML = speed;
 });
+
+speedSlider.addEventListener("wsChange", (event) => {
+  speed = event.target.value;
+  document.getElementById("speedValue").innerHTML = speed;
+});
+
 
 const scale = (number, [inMin, inMax], [outMin, outMax]) => {
     const res = (number - inMin) / (inMax - inMin) * (outMax - outMin) + outMin;
