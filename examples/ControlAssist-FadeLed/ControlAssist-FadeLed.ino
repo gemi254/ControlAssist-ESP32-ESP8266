@@ -23,7 +23,7 @@ unsigned long pingMillis = millis();  // Ping
 #define LED_BUILTIN 22
 #endif
 
-
+int ledLevel = 0;
 ControlAssist ctrl; //Control assist class
 
 PROGMEM const char HTML_BODY[] = R"=====(
@@ -120,8 +120,9 @@ void handleRoot(){
 }
 
 void lampLevel(){
-  LOG_D("lampLevel: %li\n",ctrl["lampLevel"].toInt());
-  analogWrite(LED_BUILTIN, 255 - ctrl["lampLevel"].toInt());
+  ledLevel = ctrl["lampLevel"].toInt();
+  LOG_D("lampLevel: %li\n", lampLevel);
+  analogWrite(LED_BUILTIN, 255 - ledLevel);
 }
 
 void setup() {
@@ -165,9 +166,11 @@ void setup() {
   
   //Setup control assist
   ctrl.setHtmlBody(HTML_BODY);
-  ctrl.bind("lampLevel", lampLevel);      
+  ctrl.bind("lampLevel", lampLevel);
   ctrl.begin();
-  
+  //Auto send on connect
+  ctrl.setAutoSendOnCon("lampLevel", true);
+  ctrl.put("lampLevel", ledLevel);
   //Setup led
   pinMode(LED_BUILTIN, OUTPUT);
   analogWrite(LED_BUILTIN, 1024);
