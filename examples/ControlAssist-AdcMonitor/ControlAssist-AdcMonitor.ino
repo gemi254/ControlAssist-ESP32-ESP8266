@@ -143,8 +143,7 @@ void setup() {
 
 void loop() {
   if (millis() - pingMillis >= speed){
-    if(isPlaying) 
-      readAdcadcPins();
+    if(isPlaying) readAdcadcPins();
     pingMillis = millis();
   }
 
