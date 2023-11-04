@@ -1,4 +1,7 @@
-1.0.3 (2023-11-01)
+1.0.5 (2023-11-04)
+  * Auto send keys on ws connections. Added Adc monitor example.
+
+1.0.4 (2023-11-01)
   * Added Browser log example.
   
 1.0.2 (2023-10-30)
