@@ -2,7 +2,7 @@
 Multi-platform library for controlling html elements in a esp webpages at runtime using web sockets.
 
 ## Description
-A library allowing linking of **html elements** to **sketch variables** on pages hosted on **esp32/esp8266** devices. It uses a **web socket server** on the esp **device** and a JavaScript **web socket client** implementation on the web **page** allowing bi-directional real-time communication between **device** and **page**. 
+A library allowing linking **html elements** to **sketch variables** on pages hosted on **esp32/esp8266** devices. It uses a **web socket server** on the esp **device** and a JavaScript **web socket client** implementation on the web **page** allowing bi-directional real-time communication between **device** and **page**. 
 
 In a typical webpage, html **elements** like ``input box``, ``textbox``, ``range``, ``checkbox`` can be **binded** with ControlAssist internal variables using their unique **html ids** in order to associate their values. A **vectors** list will be generated to hold all associated element keys and their values.
 
