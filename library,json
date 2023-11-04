@@ -1,12 +1,12 @@
 {
     "name": "ControlAssist",
     "keywords": "javascript html arduino esp8266 runtime controller webserver websocket-server esp32 websockets websocket-client http-server page-generator multiclient",
-    "description": "Multi-platform library for controlling html elements at runtime with websockets.",
+    "description": "Generate esp webserver pages and control its html elements at runtime using web sockets.",
     "repository": {
         "type": "git",
         "url": "https://github.com/gemi254/ControlAssist-ESP32-ESP8266.git"
     },
-    "version": "1.0.4",
+    "version": "1.0.5",
     "homepage": "https://github.com/gemi254/ControlAssist-ESP32-ESP8266",
     "examples": "examples/*/*.ino",
     "frameworks": "arduino",
