@@ -56,7 +56,11 @@ function initWebSocketCtrls(){
 PROGMEM const char CONTROLASSIST_SCRIPT_WEBSOCKETS_CLIENT[] = R"=====(
 /* * * * WebSockets functions * * * */
 //const wsServer = "ws://10.1.0.169:81/";
-const wsServer = "ws://" + document.location.host + ":81/";
+let webserver;
+if(port)
+  wsServer = "ws://" + document.location.host + ":" + port + "/";
+else
+  wsServer = "ws://" + document.location.host + ":81/";
 const dbg = false;
 let ws = null;
 let hbTimer = null;
