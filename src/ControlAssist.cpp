@@ -66,7 +66,7 @@ void ControlAssist::stopWebSockets(){
   _pWebSocket = NULL;
   LOG_I("Stoped web sockets at port: %u\n", _port);
 }
-// Return the val of a given key, Empty on not found
+// Get the val of a given key, Empty on not found
 String ControlAssist::get(String key) {
   int keyPos = getKeyPos(key);
   if (keyPos >= 0) {
@@ -170,7 +170,7 @@ void ControlAssist::setAutoSendOnCon(bool send) {
 void ControlAssist::autoSendKeys(){
   uint8_t row = 0;
   while (row++ < _ctrls.size()) { 
-    LOG_D("Checking row: %s ,%i\n", _ctrls[row - 1].key.c_str(), _ctrls[row - 1].autoSendOnCon );
+    LOG_V("Checking row: %s ,%i\n", _ctrls[row - 1].key.c_str(), _ctrls[row - 1].autoSendOnCon );
     if(_ctrls[row - 1].autoSendOnCon){
       String payload = String(_ctrls[row - 1].readNo) + "\t" + _ctrls[row - 1].val;
       if(_pWebSocket) _pWebSocket->broadcastTXT(payload);
@@ -179,7 +179,7 @@ void ControlAssist::autoSendKeys(){
   }
 }
 
-// Get location of given key to retrieve other elements
+// Get the location of given key to retrieve control
 int ControlAssist::getKeyPos(String key) {
   if (_ctrls.empty()) return -1;
   auto lower = std::lower_bound(_ctrls.begin(), _ctrls.end(), key, [](
@@ -211,6 +211,20 @@ void ControlAssist::sort(){
     return a.key < b.key;}
   );
 }
+
+// Dump config items
+void ControlAssist::dump(){
+  LOG_I("Dump configuration\n");
+  for(size_t row = 0; row< _chnToKeys.size(); row++) {
+    LOG_I("%i = %s\n", row, _chnToKeys[row].c_str());
+  }
+
+  ctrlPairs c;
+  while (getNextKeyVal(c)){
+    LOG_I("[%u]: %s \n", c.readNo, c.key.c_str());
+  }
+}
+
 // Bind a html control with id = key to a control variable
 int ControlAssist::bind(const char* key){
   int p = getKeyPos(key);
@@ -230,6 +244,7 @@ int ControlAssist::bind(const char* key){
   }*/
   return (int)_ctrls.size();
 }
+
 // Bind a html control with id = key to a control variable and an event function
 int ControlAssist::bind(const char* key, WebSocketServerEvent ev){
   size_t cnt = _ctrls.size();
@@ -244,20 +259,6 @@ int ControlAssist::bind(const char* key, WebSocketServerEvent ev){
 // Add a global callback function to handle changes
 void ControlAssist::setGlobalCallback(WebSocketServerEventG ev){
   _ev = ev;
-}
-
-// Dump config items
-void ControlAssist::dump(){
-  LOG_I("Dump configuration\n");
-  for(size_t row = 0; row< _chnToKeys.size(); row++) {
-    LOG_I("%i = %s\n", row, _chnToKeys[row].c_str());
-  }
-
-  ctrlPairs c;
-  while (getNextKeyVal(c)){
-    LOG_I("[%u]: %s \n", c.readNo, c.key.c_str());
-  }
-
 }
 
 // Response to a websocket event
@@ -317,8 +318,9 @@ void ControlAssist::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload
     }
 }
 
-// Get the initialization java script 
+// Build the initialization java script 
 String ControlAssist::getInitScript(){
+ String ctlPort = "const port = " + String(_port)+";";
  String ctlByNo = "const ctlByNo = { ";
  String ctlbyName = "const ctlbyName = { ";
  for(uint8_t r = 0; r< _chnToKeys.size(); r++) { 
@@ -330,7 +332,7 @@ String ControlAssist::getInitScript(){
   if(ctlbyName.endsWith(", ")) ctlbyName = ctlbyName.substring(0, (ctlbyName.length() - 2));
   ctlByNo   += "};";
   ctlbyName += "};";
-  return "\n" + ctlByNo +"\n" + ctlbyName;
+  return ctlPort + "\n" + ctlByNo +"\n" + ctlbyName;
 }
 
 // Render html to client
