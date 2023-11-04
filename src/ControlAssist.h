@@ -3,7 +3,7 @@
 
 #include <WebSocketsServer.h>
 
-#define CT_CLASS_VERSION "1.0.4"        // Class version
+#define CT_CLASS_VERSION "1.0.5"        // Class version
 
 // Define Platform libs
 #if defined(ESP32)
@@ -97,16 +97,16 @@ class ControlAssist{
     static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
   private:
     static std::vector<ctrlPairs> _ctrls;
-    const char* _html_headers;
-    const char* _html_body;
-    const char* _html_footer;
     static std::vector<String> _chnToKeys;
     static std::vector<uint> _keysToChn;
-    uint16_t _port;
-    bool _wsEnabled;
     static WebSocketsServer *_pWebSocket;
     static WebSocketServerEventG _ev;
     static uint8_t _clientsNum;
+    const char* _html_headers;
+    const char* _html_body;
+    const char* _html_footer;
+    uint16_t _port;
+    bool _wsEnabled;
 };
 
 #endif // _CONTROL_ASSIST_H
