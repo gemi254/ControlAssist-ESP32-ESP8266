@@ -3,7 +3,7 @@
 
 #include <WebSocketsServer.h>
 
-#define CT_CLASS_VERSION "1.0.5"        // Class version
+#define CT_CLASS_VERSION "1.0.6"        // Class version
 
 // Define Platform libs
 #if defined(ESP32)
@@ -32,19 +32,32 @@ class ControlAssist{
     ControlAssist(uint16_t port);    
     ~ControlAssist() {};
   public:
-    // Start websockets server
+    // Start web sockets server
     void begin();
+    // Setup web server handlers
+    void setup(WEB_SERVER &server, const char *uri = "/");
+    // Set web sockets server listening port
+    void setPort(uint16_t port) {if(!_wsEnabled)  _port = port; }
     // Bind a html control with id = key to a control variable
     int  bind(const char* key);
-    // Bind a html control with id = key to a control variable and an event function
+    // Bind a html control with id = key to a control variable and an on event function
     int  bind(const char* key, WebSocketServerEvent ev);
+    // Bind a html control with id = key to a control variable with start int val 
+    int  bind(const char* key, const int val); 
+    // Bind a html control with id = key to a control variable with start char val 
+    int  bind(const char* key, const char* val);
+    // Bind a html control with id = key to a control variable and an on event function
+    int  bind(const char* key, const int val, WebSocketServerEvent ev);
+    // Bind a html control with id = key to a control variable, a start val and an on event function
+    int  bind(const char* key, const char* val, WebSocketServerEvent ev);
+
     // Add a global callback function to handle changes
     void setGlobalCallback(WebSocketServerEventG ev);
     // Set html page code
     void setHtmlHeaders(const char *html_headers) { _html_headers = html_headers; }
     void setHtmlBody(const char *html_body) { _html_body = html_body; }    
     void setHtmlFooter(const char *html_footer) { _html_footer = html_footer; }    
-    // Stop websockets
+    // Stop web sockets
     void close();
   public:    
     // Implement operator [] i.e. val = config['key']    
@@ -80,6 +93,8 @@ class ControlAssist{
     String getInitScript();
     // Render html to client
     void sendHtml(WEB_SERVER &server);
+    // Render html to client
+    void sendHtml() {sendHtml(*_server); };
     // Get number of connected clients
     uint8_t getClientsNum() { return _clientsNum; }
     // Set the auto send on ws connection flag on key
@@ -107,6 +122,7 @@ class ControlAssist{
     const char* _html_footer;
     uint16_t _port;
     bool _wsEnabled;
+    static WEB_SERVER *_server;
 };
 
 #endif // _CONTROL_ASSIST_H
