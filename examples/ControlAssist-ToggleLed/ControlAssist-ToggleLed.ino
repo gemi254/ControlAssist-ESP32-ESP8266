@@ -136,10 +136,6 @@ toggleLed.addEventListener("wsChange", (event) => {
 </body>
 )=====";
 
-void handleRoot(){
-  ctrl.sendHtml(server);
-}
-
 void ledChangeHandler(){
   ledState = ctrl["toggleLed"].toInt();
   toggleLed(ledState);
@@ -161,7 +157,7 @@ void setup() {
   Serial.flush();
   LOG_I("Starting..\n");  
 
-  //Connect WIFI?
+  // Connect WIFI ?
   if(strlen(st_ssid)>0){
     LOG_E("Connect Wifi to %s.\n", st_ssid);
     WiFi.mode(WIFI_STA);
@@ -175,7 +171,7 @@ void setup() {
     Serial.println();
   } 
   
-  //Check connection
+  // Check connection
   if(WiFi.status() == WL_CONNECTED ){
     LOG_I("Wifi AP SSID: %s connected, use 'http://%s' to connect\n", st_ssid, WiFi.localIP().toString().c_str()); 
   }else{
@@ -187,22 +183,25 @@ void setup() {
     WiFi.mode(WIFI_AP_STA);
     WiFi.softAP(hostName.c_str(),"",1);
     LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());      
-    if (MDNS.begin(hostName.c_str()))  LOG_I("AP MDNS responder Started\n");     
+    if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");     
   }
 
-  //Setup webserver
-  server.on("/", handleRoot);
-  server.begin();
-  LOG_I("HTTP server started\n");
-  
-  //Setup control assist
+ 
+  // Setup control assist
   ctrl.setHtmlBody(HTML_BODY);
-  ctrl.bind("toggleLed", ledChangeHandler);
-  //Auto send on connect
+  ctrl.bind("toggleLed", ledState, ledChangeHandler);
+  // Auto send on connect
   ctrl.setAutoSendOnCon("toggleLed", true);
-  ctrl.put("toggleLed",ledState);
+  // Add a web server handler on url "/"
+  ctrl.setup(server);
   ctrl.begin();
   ctrl.dump(); 
+  LOG_V("ControlAssist started.\n");
+  
+  // Start webserver  
+  server.begin();
+  LOG_V("HTTP server started\n");
+
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH); // Turn LED OFF
 }
@@ -210,17 +209,17 @@ void setup() {
 
 void loop() {
   #if not defined(ESP32)
-    if(MDNS.isRunning()) MDNS.update(); //Handle MDNS
+    if(MDNS.isRunning()) MDNS.update(); // Handle MDNS
   #endif
-  //Handler webserver clients
+  // Handler webserver clients
   server.handleClient();
-  //Handle websockets
+  // Handle websockets
   ctrl.loop();
 
   if (millis() - pingMillis >= 5000){  
     ledState = !ledState;
     toggleLed(ledState);
-    //Set the ledState and send a websocket update
+    // Set the ledState and send a websocket update
     ctrl.put("toggleLed", ledState );
     pingMillis = millis();
   }  
