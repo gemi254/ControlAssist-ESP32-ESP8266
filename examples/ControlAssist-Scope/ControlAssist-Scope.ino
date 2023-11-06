@@ -43,7 +43,7 @@ void setup() {
   Serial.print("\n\n\n\n");
   Serial.flush();
   LOG_I("Starting..\n");  
-  //Connect WIFI?
+  // Connect WIFI ?
   if(strlen(st_ssid)>0){
     LOG_E("Connect Wifi to %s.\n", st_ssid);
     WiFi.mode(WIFI_STA);
@@ -57,7 +57,7 @@ void setup() {
     Serial.println();
   }  
 
-  //Check connection
+  // Check connection
   if(WiFi.status() == WL_CONNECTED ){
     LOG_I("Wifi AP SSID: %s connected, use 'http://%s' to connect\n", st_ssid, WiFi.localIP().toString().c_str()); 
   }else{
@@ -69,42 +69,38 @@ void setup() {
     WiFi.mode(WIFI_AP_STA);
     WiFi.softAP(hostName.c_str(),"",1);
     LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());      
-    if (MDNS.begin(hostName.c_str()))  LOG_I("AP MDNS responder Started\n");     
+    if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");     
   }
 
-  //Setup webserver
-  server.on("/", handleRoot);
+
+
+  // Control assist setup
+  ctrl.setHtmlHeaders(HTML_HEADERS);
+  ctrl.setHtmlBody(HTML_BODY);  
+  ctrl.setHtmlFooter(HTML_SCRIPT);  
+  // Bind controls
+  ctrl.bind("on-off",isPlaying, changeOnOff);
+  ctrl.bind("speed", speed, speedChange);
+  // Auto send key values on connection  
+  ctrl.setAutoSendOnCon("on-off",true);
+  ctrl.setAutoSendOnCon("speed",true);
+  // Store key position on adc_val for speed
+  // Only on last bind call the position will be valid!
+  adc_pos = ctrl.bind("adc_val");  
+  // Add a web server handler on url "/"
+  ctrl.setup(server);
+  // Start the server
+  ctrl.begin();
+  ctrl.dump();
+  LOG_V("ControlAssist started.\n");
+
+  // Setup webserver  
   server.on("/d", []() {
     server.send(200, "text/plain", "Serial dump");
     ctrl.dump();           
   });  
   server.begin();
-  LOG_I("HTTP server started\n");
-
-  //Control assist setup
-  ctrl.setHtmlHeaders(HTML_HEADERS);
-  ctrl.setHtmlBody(HTML_BODY);  
-  ctrl.setHtmlFooter(HTML_SCRIPT);
-  // Bind controls
-  ctrl.bind("on-off", changeOnOff);
-  ctrl.bind("speed", speedChange);
-  ctrl.bind("adc_val");
-  
-  // Set init values
-  ctrl.put("on-off", isPlaying, false);
-  ctrl.put("speed", speed, false);
-
-  // Auto send key values on connection  
-  ctrl.setAutoSendOnCon("on-off",true);
-  ctrl.setAutoSendOnCon("speed",true);
-
-  //Store key position on adc_val for speed
-  ctrl.bind("adc_val");
-  adc_pos = ctrl.getKeyPos("adc_val");
-  
-  ctrl.begin();
-  ctrl.dump();
-
+  LOG_V("HTTP server started\n");
 #if defined(ESP32)
   pinMode(ADC_PIN, INPUT);
 #endif
@@ -113,18 +109,18 @@ void setup() {
 void loop() { // Run repeatedly
 
   if (millis() - pingMillis >= speed){
-    //Set control at position to value  
+    // Set control at position to value  
     if(isPlaying)
       ctrl.set(adc_pos, analogRead(ADC_PIN), true);
     pingMillis = millis();
   }
   
   #if not defined(ESP32)
-    if(MDNS.isRunning()) MDNS.update(); //Handle MDNS
+    if(MDNS.isRunning()) MDNS.update(); // Handle MDNS
   #endif
-  //Handler webserver clients
+  // Handler webserver clients
   server.handleClient();
-  //Handle websockets
+  // Handle websockets
   ctrl.loop();
 }
 
