@@ -14,9 +14,9 @@ PROGMEM const char CONTROLASSIST_HTML_BODY[] = R"=====(
 :root { 
   --errColor: red;
   --warnColor: orange;
-  --infoColor: gray;
+  --infoColor: green;
   --dbgColor: blue;
-  --vrbColor: green;
+  --vrbColor: gray;
 }
 body{
   font-family: monospace;
@@ -82,9 +82,6 @@ const toColor = (line) => {
 
 #define LOGGER_LOG_MODE  3                  // Set default logging mode using external function
 void _log_printf(const char *format, ...);  // Custom log function
-#define MAX_LOG_BUFFER_LEN 8192             // Maximum size of log buffer
-#define MAX_LOG_FMT 256                     // Maximum size of log format
-
 #define LOGGER_LOG_LEVEL 5
 #include <ControlAssist.h>  // Control assist class
 
@@ -94,9 +91,11 @@ const char st_ssid[]="";
 const char st_pass[]="";
 unsigned long pingMillis = millis();  // Ping 
 
-ControlAssist ctrl; //Control assist class
+ControlAssist ctrl; // Controler class
 
 // Log print arguments
+#define MAX_LOG_BUFFER_LEN 8192             // Maximum size of log buffer
+#define MAX_LOG_FMT 256                     // Maximum size of log format
 static String logBuffer="";
 static char fmtBuf[MAX_LOG_FMT];
 static char outBuf[512];
@@ -109,28 +108,22 @@ void _log_printf(const char *format, ...){
   va_start(arglist, format);  
   vsnprintf(outBuf, MAX_LOG_FMT, fmtBuf, arglist);
   va_end(arglist);
-  //size_t msgLen = strlen(outBuf);
   Serial.print(outBuf);  
-  if(ctrl.getClientsNum()>0){ //Is clients connected?
+  if(ctrl.getClientsNum()>0){ // Is clients connected?
     if(logBuffer!=""){
       ctrl.put("logLine",logBuffer);
       logBuffer = "";
     } 
     ctrl.put("logLine",outBuf,true);
-  }else{ //No clients store to logBuffer
+  }else{ // No clients store to logBuffer
     if(logBuffer.length()) logBuffer += "<br>";
-    //if(logBuffer.length()) logBuffer += " (" + String(logBuffer.length()) +")<br>";
+    // if(logBuffer.length()) logBuffer += " (" + String(logBuffer.length()) +")<br>";
     logBuffer += String(outBuf);
   } 
   if(logBuffer.length() > MAX_LOG_BUFFER_LEN){
     int l = logBuffer.indexOf("<br>");
     logBuffer = logBuffer.substring(l+4, logBuffer.length()-1);
   }  
-}
-
-// Handle web server root request and send html to client
-void handleRoot(){
-  ctrl.sendHtml(server);
 }
 
 // Log debug info
@@ -148,7 +141,7 @@ void setup() {
   Serial.flush();
   LOG_I("Starting..\n");  
   
-  //Connect WIFI?
+  // Connect WIFI ?
   if(strlen(st_ssid)>0){
     LOG_D("Connect Wifi to %s.\n", st_ssid);
     WiFi.mode(WIFI_STA);
@@ -162,7 +155,7 @@ void setup() {
     Serial.println();
   } 
   
-  //Check connection
+  // Check connection
   if(WiFi.status() == WL_CONNECTED ){
     LOG_I("Wifi AP SSID: %s connected, use 'http://%s' to connect\n", st_ssid, WiFi.localIP().toString().c_str()); 
   }else{
@@ -174,19 +167,20 @@ void setup() {
     WiFi.mode(WIFI_AP);
     WiFi.softAP(hostName.c_str(),"",1);
     LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());      
-    if (MDNS.begin(hostName.c_str()))  LOG_I("AP MDNS responder Started\n");     
+    if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");     
   }
   
-  //Setup webserver
-  server.on("/", handleRoot);
-  server.begin();
-  LOG_V("HTTP server started\n");
-  //Setup control assist
+  // Setup control assist
   ctrl.setHtmlBody(CONTROLASSIST_HTML_BODY);
   ctrl.setHtmlFooter(CONTROLASSIST_HTML_SCRIPT);
   ctrl.bind("logLine");
+  ctrl.setup(server);
   ctrl.begin();
-  LOG_V("ControlAssist started.\n") 
+  LOG_V("ControlAssist started.\n");
+  
+  // Start webserver
+  server.begin();
+  LOG_V("HTTP server started\n");  
 }
 
 void loop() {
@@ -196,11 +190,11 @@ void loop() {
   }
 
   #if not defined(ESP32)
-    if(MDNS.isRunning()) MDNS.update(); //Handle MDNS
+    if(MDNS.isRunning()) MDNS.update(); // Handle MDNS
   #endif
-  //Handler webserver clients
+  // Handler webserver clients
   server.handleClient();
-  //Handle websockets
+  // Handle websockets
   ctrl.loop();
 }
 
