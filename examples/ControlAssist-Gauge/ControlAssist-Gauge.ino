@@ -26,8 +26,8 @@ const char st_ssid[]=""; // Put connection info here
 const char st_pass[]="";
 char chBuff[128];
 static bool buttonState = false;
-#define DELAY_MS 1000   //Measurements delay
-ControlAssist ctrl;     //Control assist class
+#define DELAY_MS 1000   // Measurements delay
+ControlAssist ctrl;     // Control assist class
 
 #include "gaugePMem.h"
 
@@ -35,7 +35,7 @@ void handleRoot(){
   ctrl.sendHtml(server);
 }
 
-//Change handler to handle websockets changes
+// Change handler to handle websockets changes
 void changeHandler(uint8_t no){
   String key = ctrl.getKey(no);
   if(key == "check_ctrl" ) 
@@ -49,7 +49,7 @@ void setup() {
   Serial.flush();
   LOG_I("Starting..\n");  
   
-   //Connect WIFI?
+   // Connect WIFI ?
   if(strlen(st_ssid)>0){
     LOG_E("Connect Wifi to %s.\n", st_ssid);
     WiFi.mode(WIFI_STA);
@@ -63,7 +63,7 @@ void setup() {
     Serial.println();
   } 
   
-  //Check connection
+  // Check connection
   if(WiFi.status() == WL_CONNECTED ){
     LOG_I("Wifi AP SSID: %s connected, use 'http://%s' to connect\n", st_ssid, WiFi.localIP().toString().c_str()); 
   }else{
@@ -77,15 +77,11 @@ void setup() {
       LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());
     else
       LOG_E("Wifi AP SSID: %s FAILED!\n", WiFi.softAPSSID().c_str());      
-    if (MDNS.begin(hostName.c_str()))  LOG_I("AP MDNS responder Started\n");     
+    if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");     
   }
 
-  //Setup webserver
-  server.on("/", handleRoot); 
-  server.begin();
-  LOG_I("HTTP server started\n");
   
-  //Control assist setup
+  // Control assist setup
   ctrl.setHtmlHeaders(HTML_HEADERS);
   ctrl.setHtmlBody(HTML_BODY);
   ctrl.bind("rssi");
@@ -97,10 +93,17 @@ void setup() {
   ctrl.bind("vcc");
   ctrl.bind("hall");  
   #endif  
-  //Every time a variable changed changeHandler will be called   
+  // Every time a variable changed changeHandler will be called   
   ctrl.setGlobalCallback(changeHandler);
+  // Add a web server handler on url "/"
+  ctrl.setup(server);
   ctrl.begin();
+  LOG_V("ControlAssist started.\n");
 
+  // Start web server
+  server.begin();
+  LOG_V("HTTP server started\n");
+  
 }
 #if defined(ESP32)
 int getMemPerc(){
@@ -119,14 +122,7 @@ int getMemPerc(){
 #endif
 
 void loop() {
-  //Handler webserver clients
-  server.handleClient();
-  //Handle websockets
-  ctrl.loop();
-  #if not defined(ESP32)
-    if(MDNS.isRunning()) MDNS.update(); //Handle MDNS
-  #endif
-  //Update html control values
+  // Update html control values
   if (millis() - pingMillis >= DELAY_MS){  
     ctrl.put("rssi", String( WiFi.RSSI()) );
     ctrl.put("mem", String( getMemPerc()) );    
@@ -140,5 +136,11 @@ void loop() {
     pingMillis = millis();
   }
 
-
+  // Handler webserver clients
+  server.handleClient();
+  // Handle websockets
+  ctrl.loop();
+  #if not defined(ESP32)
+    if(MDNS.isRunning()) MDNS.update(); // Handle MDNS
+  #endif
  }
