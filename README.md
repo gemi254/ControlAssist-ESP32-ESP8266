@@ -52,24 +52,30 @@ Define and initialize you class
 
 + in your setup you must bind the html elements you want to control.
   - `ctrl.bind("html_id");` to link the html element
-  - `ctrl.bind("html_id", changeFunction);` if you need also to handle changes  
-
+  - `ctrl.bind("html_id", start_value );` if you need to bind and init for sending on connection
+  - `ctrl.bind("html_id", start_value, changeFunction);` if you need also to handle changes
+  
 + in your setup specify if you want ot auto send key initial values during web socket connection   
   - `ctrl.setAutoSendOnCon("html_id",true /*enable / disable*/);`
   - `ctrl.put("html_id", value);  // Set a default value to be send`
 
-+ Define a web server handler to host your webpage 
++ Configure web server to handle control assist page on a uri
+  - ` ctrl.setup(server, "/");  // Add a web server handler on url "/"`
+
++ Or define a custom web server handler to host your webpage
   - `void handleRoot(){ ctrl.sendHtml(server); }`
 
 + If you want to use a global callback function to handle key changes
   - `ctrl.setGlobalCallback(globalChangeFuncion);`
+
 
 + Start websockets server and listen for web socket client connections
   - `ctrl.begin();`
 
 
 ## ControlAssist control functions
-Controlling your elements 
+Controlling your elements inside you loop function
+
 + Change the values of html elements
   - `ctrl.put("html_id", value );`
 
@@ -79,7 +85,7 @@ Controlling your elements
 + Handle changes inside your code with a handler function
   - `void globalChangeFuncion(uint8_t no){  String key = ctrl.getKey(no); int val = ctrl[key].toInt() }`
   
-+ Inside your main loop() function Handle web sockets server connections
++ Inside your main loop() call ControlAssist loop() to handle web sockets server clients
   - `ctrl.loop();`
 
 
