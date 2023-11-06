@@ -14,7 +14,7 @@
 #include "controlAssistPMem.h" //Memory static valiables (html pages)
 #define LOGGER_LOG_LEVEL 4     //Set log level for this module
 #include "ControlAssist.h"
-
+WEB_SERVER *ControlAssist::_server = NULL;
 WebSocketsServer *ControlAssist::_pWebSocket = NULL;
 std::vector<ctrlPairs> ControlAssist::_ctrls;
 std::vector<String> ControlAssist::_chnToKeys;
@@ -22,6 +22,7 @@ WebSocketServerEventG ControlAssist::_ev;
 uint8_t ControlAssist::_clientsNum;
 
 ControlAssist::ControlAssist() { 
+  _server = NULL;
   _pWebSocket = NULL; 
   _wsEnabled = false; 
   _ev = NULL;
@@ -43,6 +44,12 @@ void ControlAssist::begin(){
     _wsEnabled = true;
   }
 }
+// Setup webserver handlers
+void ControlAssist::setup(WEB_SERVER &server, const char *uri){
+  _server = &server;
+  server.on(uri, [this] { this->sendHtml(); } );
+}
+
 // Stop websockets
 void ControlAssist::close(){
   if(_wsEnabled){
@@ -50,6 +57,7 @@ void ControlAssist::close(){
     _wsEnabled = false;
   }
 }
+
 // Start the websocket server
 void ControlAssist::startWebSockets(){
   if(_pWebSocket) return;
@@ -214,42 +222,49 @@ void ControlAssist::sort(){
 
 // Dump config items
 void ControlAssist::dump(){
-  LOG_I("Dump configuration\n");
+  LOG_I("* Dump channels to keys *\n");
   for(size_t row = 0; row< _chnToKeys.size(); row++) {
-    LOG_I("%i = %s\n", row, _chnToKeys[row].c_str());
+    LOG_I("%i = %s\n", row + 1, _chnToKeys[row].c_str());
   }
-
+  LOG_I("* Dump controls *\n");
   ctrlPairs c;
   while (getNextKeyVal(c)){
-    LOG_I("[%u]: %s \n", c.readNo, c.key.c_str());
+    LOG_I("[%u]: a:%i, %s = %s \n", c.readNo, c.autoSendOnCon, c.key.c_str(), c.val.c_str() );
   }
 }
 
 // Bind a html control with id = key to a control variable
 int ControlAssist::bind(const char* key){
+  return bind(key, "");
+}
+// Bind a html control with id = key and local val to a control variable
+int ControlAssist::bind(const char* key, const int val){  
+  return bind(key, String(val).c_str(), NULL);
+}
+// Bind a html control with id = key and local val to a control variable
+int ControlAssist::bind(const char* key, const char* val){
+  return bind(key, val, NULL);
+}
+
+// Bind a html control with id = key to a local variable and an event function
+int ControlAssist::bind(const char* key, WebSocketServerEvent ev){
+  return bind(key, "", ev);
+}
+// Bind a html control with id = key and default int val to a local variable with an event function
+int ControlAssist::bind(const char* key, const int val, WebSocketServerEvent ev){
+   return bind(key, String(val).c_str(), ev);
+}
+
+// Bind a html control with id = key and default char val to a local variable with an event function
+int ControlAssist::bind(const char* key, const char* val, WebSocketServerEvent ev){
   int p = getKeyPos(key);
   if(p >= 0){
-    LOG_E("Bind key: %s failed. Already exists!\n", key);
+    LOG_E("Bind key: %s failed. Already exists in pos %i!\n", key,  p);
     return -1;
   }
   size_t cnt = _ctrls.size();
-  ctrlPairs d = { key, "", cnt + 1, NULL, false};
-  LOG_I("Binding key %s, %u\n", key, cnt); 
-  _ctrls.push_back(d);
-  sort();
-  _chnToKeys.push_back(key);
-  String keyHtml ( "id=\"" + String(key) + "\"" );
-  /*if (strstr(_html_body, keyHtml.c_str()) == NULL) {
-    LOG_E("Key: %s not found in html\n", key);
-  }*/
-  return (int)_ctrls.size();
-}
-
-// Bind a html control with id = key to a control variable and an event function
-int ControlAssist::bind(const char* key, WebSocketServerEvent ev){
-  size_t cnt = _ctrls.size();
-  ctrlPairs d = { key, "", cnt + 1, ev, false };
-  LOG_I("Binding key %s, %i\n", key, cnt); 
+  ctrlPairs d = { key, val, cnt + 1, ev, false };
+  LOG_I("Binding key %s = %s, %i\n", key, val, cnt); 
   _ctrls.push_back(d);
   sort();
   _chnToKeys.push_back(key);
@@ -284,11 +299,12 @@ void ControlAssist::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload
           break;
       case WStype_TEXT:
           {
-            char cNo = ( (char)payload[0]);
+            uint8_t * pload = payload;
+            char cNo = ( (char)pload[0]);
             int id = cNo - '0' - 1;
             if(id < 0) return;
-            payload += 2;
-            std::string val = reinterpret_cast<char *>(payload);
+            pload += 2;
+            std::string val = reinterpret_cast<char *>(pload);
          
             int no = getKeyPos(_chnToKeys[id]);
             _ctrls[no].val = String(val.c_str());
@@ -301,6 +317,12 @@ void ControlAssist::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload
               _ev(id);
             }
             LOG_V("[%u] cid: %i no: %i get Text: %s\n", num, id, no, val.c_str());
+            // Update all other connected clients
+            if( _clientsNum > 1 ){
+              for(uint8_t i=0; i<_clientsNum; ++i){
+                if( i != num ) _pWebSocket->sendTXT(i, payload);
+              }
+            }
           }
           break;
       case WStype_BIN:
