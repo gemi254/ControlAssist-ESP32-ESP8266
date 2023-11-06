@@ -21,8 +21,7 @@ unsigned long pingMillis = millis();  // Ping
 
 char chBuff[128];
 static bool buttonState = false;
-
-ControlAssist ctrl; //Control assist class
+ControlAssist ctrl; // Control assist class
 
 PROGMEM const char HTML_BODY[] = R"=====(
 <body>
@@ -66,11 +65,7 @@ PROGMEM const char HTML_BODY[] = R"=====(
 </body>
 )=====";
 
-void handleRoot(){
-  ctrl.sendHtml(server);
-}
-
-//Change handler to handle websockets changes
+// Change handler to handle websockets changes
 void changeHandler(uint8_t no){
   String key = ctrl.getKey(no);
   if(key == "check_ctrl" ) 
@@ -84,7 +79,7 @@ void setup() {
   Serial.flush();
   LOG_I("Starting..\n");  
   
-   //Connect WIFI?
+   // Connect WIFI ?
   if(strlen(st_ssid)>0){
     LOG_E("Connect Wifi to %s.\n", st_ssid);
     WiFi.mode(WIFI_STA);
@@ -98,7 +93,7 @@ void setup() {
     Serial.println();
   } 
   
-  //Check connection
+  // Check connection
   if(WiFi.status() == WL_CONNECTED ){
     LOG_I("Wifi AP SSID: %s connected, use 'http://%s' to connect\n", st_ssid, WiFi.localIP().toString().c_str()); 
   }else{
@@ -110,15 +105,11 @@ void setup() {
     WiFi.mode(WIFI_AP);
     WiFi.softAP(hostName.c_str(),"",1);
     LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());      
-    if (MDNS.begin(hostName.c_str()))  LOG_I("AP MDNS responder Started\n");     
+    if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");     
   }
 
-  //Setup webserver
-  server.on("/", handleRoot); 
-  server.begin();
-  LOG_I("HTTP server started\n");
   
-  //Control assist setup
+  // Control assist setup
   ctrl.setHtmlBody(HTML_BODY);
   ctrl.bind("span_ctrl");
   ctrl.bind("input_ctrl");
@@ -126,38 +117,46 @@ void setup() {
   ctrl.bind("check_ctrl");  
   ctrl.bind("range_ctrl");
   ctrl.bind("button_ctrl");
-  //Every time a variable changed changeHandler will be called   
+  // Every time a variable changed changeHandler will be called   
   ctrl.setGlobalCallback(changeHandler);
+  // Add a web server handler on url "/"
+  ctrl.setup(server);
+  // Start web sockets
   ctrl.begin();
-
+  LOG_V("ControlAssist started.\n");
+  
+  // Start webs server  
+  server.begin();
+  LOG_V("HTTP server started\n");
+  
   pinMode(ADC_PIN, INPUT);
 }
 
 void loop() {
-  //Change html control values
+  // Change html control values
   if (millis() - pingMillis >= 3000){  
+    // Update control assist variables
     ctrl.put("span_ctrl", analogRead(ADC_PIN) );
     ctrl.put("input_ctrl", String(ESP.getCycleCount()));
-    
-#if defined(ESP32)    
-    ///ctrl.put("input_ctrl", String((temprature_sens_read() - 32) / 1.8 ) + " °C");
-    sprintf(chBuff, "Memory Free: heap %u, block: %u, pSRAM %u", ESP.getFreeHeap(), heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL), ESP.getFreePsram());
-#else
-    sprintf(chBuff,"Memory free heap: %u, stack: %u ,block: %u", ESP.getFreeHeap(), ESP.getFreeContStack(), ESP.getMaxFreeBlockSize());
-#endif    
     ctrl.put("text_ctrl",  chBuff);
     ctrl.put("check_ctrl", buttonState );
     ctrl.put("range_ctrl", WiFi.RSSI() );    
-    ctrl.put("button_ctrl", buttonState );
+    ctrl.put("button_ctrl", buttonState );    
+#if defined(ESP32)    
+    //ctrl.put("input_ctrl", String((temprature_sens_read() - 32) / 1.8 ) + " °C");
+    sprintf(chBuff, "Memory Free: heap %u, block: %u, pSRAM %u", ESP.getFreeHeap(), heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL), ESP.getFreePsram());
+#else
+    sprintf(chBuff,"Memory free heap: %u, stack: %u ,block: %u", ESP.getFreeHeap(), ESP.getFreeContStack(), ESP.getMaxFreeBlockSize());
+#endif        
     buttonState = !buttonState;
     pingMillis = millis();
   }
   
   #if not defined(ESP32)
-    if(MDNS.isRunning()) MDNS.update(); //Handle MDNS
+    if(MDNS.isRunning()) MDNS.update(); // Handle MDNS
   #endif
-  //Handler webserver clients
+  // Handler webserver clients
   server.handleClient();
-  //Handle websockets
+  // Handle websockets
   ctrl.loop();
 }
