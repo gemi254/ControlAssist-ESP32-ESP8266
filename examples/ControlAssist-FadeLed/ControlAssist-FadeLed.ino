@@ -24,7 +24,7 @@ unsigned long pingMillis = millis();  // Ping
 #endif
 
 int ledLevel = 0;
-ControlAssist ctrl; //Control assist class
+ControlAssist ctrl; // Control assist class
 
 PROGMEM const char HTML_BODY[] = R"=====(
 <style>
@@ -115,10 +115,6 @@ lampLevel.addEventListener("wsChange", (event) => {
 </html>
 )=====";
 
-void handleRoot(){
-  ctrl.sendHtml(server);
-}
-
 void lampLevel(){
   ledLevel = ctrl["lampLevel"].toInt();
   LOG_D("lampLevel: %li\n", lampLevel);
@@ -130,7 +126,7 @@ void setup() {
   Serial.print("\n\n\n\n");
   Serial.flush();
   LOG_I("Starting..\n");  
-  //Connect WIFI?  
+  // Connect WIFI ?  
   if(strlen(st_ssid)>0){
     LOG_E("Connect Wifi to %s.\n", st_ssid);
     WiFi.mode(WIFI_STA);
@@ -144,7 +140,7 @@ void setup() {
     Serial.println();
   } 
   
-//Check connection
+  // Check connection
   if(WiFi.status() == WL_CONNECTED ){
     LOG_I("Wifi AP SSID: %s connected, use 'http://%s' to connect\n", st_ssid, WiFi.localIP().toString().c_str()); 
   }else{
@@ -156,22 +152,25 @@ void setup() {
     WiFi.mode(WIFI_AP_STA);
     WiFi.softAP(hostName.c_str(),"",1);
     LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());      
-    if (MDNS.begin(hostName.c_str()))  LOG_I("AP MDNS responder Started\n");     
+    if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");     
   }
   
-  //Setup webserver
-  server.on("/", handleRoot);
-  server.begin();
-  LOG_I("HTTP server started\n");
-  
-  //Setup control assist
+  // Setup control assist
   ctrl.setHtmlBody(HTML_BODY);
-  ctrl.bind("lampLevel", lampLevel);
-  ctrl.begin();
-  //Auto send on connect
+  ctrl.bind("lampLevel", ledLevel, lampLevel);
+  // Auto send on connect
   ctrl.setAutoSendOnCon("lampLevel", true);
-  ctrl.put("lampLevel", ledLevel);
-  //Setup led
+  // Add a web server handler on url "/"
+  ctrl.setup(server);
+  // Start web sockets  
+  ctrl.begin();
+  LOG_V("ControlAssist started.\n");
+
+  // Setup webserver
+  server.begin();
+  LOG_V("HTTP server started\n");
+
+  // Setup led
   pinMode(LED_BUILTIN, OUTPUT);
   analogWrite(LED_BUILTIN, 1024);
   LOG_I("Setup Lamp Led for ESP8266 board\n"); 
@@ -179,11 +178,11 @@ void setup() {
 
 void loop() {
   #if not defined(ESP32)
-    if(MDNS.isRunning()) MDNS.update(); //Handle MDNS
+    if(MDNS.isRunning()) MDNS.update(); // Handle MDNS
   #endif
-  //Handler webserver clients
+  // Handler webserver clients
   server.handleClient();
-  //Handle websockets
+  // Handle websockets
   ctrl.loop();;
 }
 
