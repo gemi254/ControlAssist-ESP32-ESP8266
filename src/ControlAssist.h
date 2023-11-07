@@ -3,7 +3,7 @@
 
 #include <WebSocketsServer.h>
 
-#define CT_CLASS_VERSION "1.0.6"        // Class version
+#define CT_CLASS_VERSION "1.0.7a"        // Class version
 
 // Define Platform libs
 #if defined(ESP32)
@@ -16,7 +16,7 @@
 
 typedef std::function<void(uint8_t num)> WebSocketServerEventG;
 typedef std::function<void(void)> WebSocketServerEvent;
-   
+
 //Structure for control elements
 struct ctrlPairs {
     String key;
@@ -67,7 +67,7 @@ class ControlAssist{
     // Get the key of a channel
     String getKey(uint8_t channel);
     // Return the position of given key
-    static int getKeyPos(String key);
+    int getKeyPos(String key);
     // Return next key and value from configs on each call in key order
     bool getNextKeyVal(ctrlPairs &c);  
     // Update the val at pos, (int)
@@ -88,7 +88,7 @@ class ControlAssist{
     void dump();
   public:
     // Run websockets
-    void loop() { if(_pWebSocket) _pWebSocket->loop(); }
+    void loop() { if(_socket) _socket->loop(); }
     // Get the initialization java script 
     String getInitScript();
     // Render html to client
@@ -107,22 +107,22 @@ class ControlAssist{
     // Stop websockets
     void stopWebSockets();
     // Send the keys with auto send flag on ws connect
-    static void autoSendKeys();
+    void autoSendKeys(uint8_t num);
     // Response to a websocket event
-    static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
+    void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
   private:
-    static std::vector<ctrlPairs> _ctrls;
-    static std::vector<String> _chnToKeys;
-    static std::vector<uint> _keysToChn;
-    static WebSocketsServer *_pWebSocket;
-    static WebSocketServerEventG _ev;
-    static uint8_t _clientsNum;
+    std::vector<ctrlPairs> _ctrls;
+    std::vector<String> _chnToKeys;
+    std::vector<uint> _keysToChn;
+    uint8_t _clientsNum;
     const char* _html_headers;
     const char* _html_body;
     const char* _html_footer;
     uint16_t _port;
     bool _wsEnabled;
-    static WEB_SERVER *_server;
+    WEB_SERVER *_server;
+    WebSocketsServer *_socket;
+    WebSocketServerEventG _ev;
 };
 
 #endif // _CONTROL_ASSIST_H
