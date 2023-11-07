@@ -31,11 +31,7 @@ ControlAssist ctrl;     // Control assist class
 
 #include "gaugePMem.h"
 
-void handleRoot(){
-  ctrl.sendHtml(server);
-}
-
-// Change handler to handle websockets changes
+// Change handler to handle web sockets changes
 void changeHandler(uint8_t no){
   String key = ctrl.getKey(no);
   if(key == "check_ctrl" ) 
@@ -124,11 +120,11 @@ int getMemPerc(){
 void loop() {
   // Update html control values
   if (millis() - pingMillis >= DELAY_MS){  
-    ctrl.put("rssi", String( WiFi.RSSI()) );
-    ctrl.put("mem", String( getMemPerc()) );    
+    ctrl.put("rssi", String( WiFi.RSSI() ) );
+    ctrl.put("mem", String( getMemPerc() ) );    
     #if defined(ESP32)    
     ctrl.put("temp", String( ((temprature_sens_read() - 32) / 1.8), 1 )); 
-    ctrl.put("hall", String( hallRead()) );
+    ctrl.put("hall", String( hallRead() ) );
     #else
     ctrl.put("vcc", String( ESP.getVcc() ));    
     #endif    
