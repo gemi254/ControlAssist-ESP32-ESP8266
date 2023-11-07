@@ -9,122 +9,19 @@
   #include <ESP8266mDNS.h>
 #endif
 
-PROGMEM const char CONTROLASSIST_HTML_BODY[] = R"=====(
-<style>
-:root { 
-  --errColor: red;
-  --warnColor: orange;
-  --infoColor: green;
-  --dbgColor: blue;
-  --vrbColor: gray;
-}
-body{
-  font-family: monospace;
-  font-size: 0.7rem;
-}
-</style>
-<body>
-<input type="text" id="logLine" style="Display: None;">
-<span id="logText"></span>
-</body>
-)=====";
+#define LOGGER_LOG_MODE  3    // Set default logging mode using external function
+#define LOGGER_LOG_LEVEL 5    // Define log level for this module
+void _log_printf(const char *format, ...);  // Custom log function, defined in weblogger.h
+#include <ControlAssist.h>    // Control assist class
+#include "webLogger.h"        // Web based log using web sockets
 
-PROGMEM const char CONTROLASSIST_HTML_SCRIPT[] = R"=====(
-<script>
-const logLine = document.getElementById("logLine"),
-logText = document.getElementById("logText")
-const root = getComputedStyle($(':root'));
+WebLogger weblog(84);         // The logger class on port 84 (!Must named weblog)
 
-// Event listener for web sockets messages
-logLine.addEventListener("wsChange", (event) => {
-  if(logText.innerHTML.length) logText.innerHTML += "<br>";
-  let lines = event.target.value.split("<br>");
-  if(lines.length > 1){
-    for (i in lines){
-      logText.innerHTML += toColor(lines[i] );
-      if( i < lines.length - 1 ) logText.innerHTML += "<br>"
-    }
-  }else{
-    logText.innerHTML += toColor( event.target.value );
-  }
-  
-  if(isScrollBottom())
-    window.scrollTo({ left: 0, top: document.body.scrollHeight, behavior: "smooth" });
-});
-
-const isScrollBottom = () => {
-  let documentHeight = document.body.scrollHeight;
-  let currentScroll = window.scrollY + window.innerHeight;
-  let snap = 10; 
-  if(currentScroll + snap > documentHeight) {
-     return true;
-  }
-  return false;
-}
-
-const toColor = (line) => {
-  // Color dbg line according to its type
-  let colorVar = "";
-  if (line.includes(" E @")) colorVar = "errColor";
-  else if (line.includes("W @ ")) colorVar = "warnColor";
-  else if (line.includes("I @ ")) colorVar = "infoColor";
-  else if (line.includes("D @ ")) colorVar = "dbgColor";
-  else if (line.includes("V @ ")) colorVar = "vrbColor";
-
-  if (colorVar.length > 0) {
-    const color = root.getPropertyValue('--' + colorVar);
-    return "<font color=" + color + ">" + line + "</font>";
-  } else return line;
-}
-</script>
-</html>
-)=====";
-
-#define LOGGER_LOG_MODE  3                  // Set default logging mode using external function
-void _log_printf(const char *format, ...);  // Custom log function
-#define LOGGER_LOG_LEVEL 5
-#include <ControlAssist.h>  // Control assist class
-
-// Put connection info here. 
+// Put your connection credentials here. 
 // On empty an AP will be started
-const char st_ssid[]=""; 
-const char st_pass[]="";
+const char st_ssid[]="mdk3"; 
+const char st_pass[]="2843028858";
 unsigned long pingMillis = millis();  // Ping 
-
-ControlAssist ctrl; // Controler class
-
-// Log print arguments
-#define MAX_LOG_BUFFER_LEN 8192             // Maximum size of log buffer
-#define MAX_LOG_FMT 256                     // Maximum size of log format
-static String logBuffer="";
-static char fmtBuf[MAX_LOG_FMT];
-static char outBuf[512];
-static va_list arglist;
-
-// Custom log print function 
-void _log_printf(const char *format, ...){
-  strncpy(fmtBuf, format, MAX_LOG_FMT);
-  fmtBuf[MAX_LOG_FMT - 1] = 0;
-  va_start(arglist, format);  
-  vsnprintf(outBuf, MAX_LOG_FMT, fmtBuf, arglist);
-  va_end(arglist);
-  Serial.print(outBuf);  
-  if(ctrl.getClientsNum()>0){ // Is clients connected?
-    if(logBuffer!=""){
-      ctrl.put("logLine",logBuffer);
-      logBuffer = "";
-    } 
-    ctrl.put("logLine",outBuf,true);
-  }else{ // No clients store to logBuffer
-    if(logBuffer.length()) logBuffer += "<br>";
-    // if(logBuffer.length()) logBuffer += " (" + String(logBuffer.length()) +")<br>";
-    logBuffer += String(outBuf);
-  } 
-  if(logBuffer.length() > MAX_LOG_BUFFER_LEN){
-    int l = logBuffer.indexOf("<br>");
-    logBuffer = logBuffer.substring(l+4, logBuffer.length()-1);
-  }  
-}
 
 // Log debug info
 void debugMemory(const char* caller) {
@@ -170,13 +67,14 @@ void setup() {
     if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");     
   }
   
-  // Setup control assist
-  ctrl.setHtmlBody(CONTROLASSIST_HTML_BODY);
-  ctrl.setHtmlFooter(CONTROLASSIST_HTML_SCRIPT);
-  ctrl.bind("logLine");
-  ctrl.setup(server);
-  ctrl.begin();
-  LOG_V("ControlAssist started.\n");
+  // Setup a weblogger on url "/log"
+  weblog.setup(server);
+  
+  // Setup webserver  
+  server.on("/", []() {
+    server.send(200, "text/html", "<h1>This is root page</h1><br><a target='_new' href='/log'>View log</a>");
+    weblog._ctrl.dump();
+  });
   
   // Start webserver
   server.begin();
@@ -195,6 +93,6 @@ void loop() {
   // Handler webserver clients
   server.handleClient();
   // Handle websockets
-  ctrl.loop();
+  weblog.loop();
 }
 
