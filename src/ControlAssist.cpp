@@ -7,23 +7,20 @@
   #include <ESP8266WiFi.h>
   #include <WiFiClient.h>
   #include <ESP8266WebServer.h>
-//  #include "TZ.h"
 #endif
 
 #include <WebSocketsServer.h>
-#include "controlAssistPMem.h" //Memory static valiables (html pages)
+#include "controlAssistPMem.h" // Memory static valiables (html pages)
+
+// #define LOGGER_LOG_MODE  3                  // Set default logging mode using external function
+// void _log_printf(const char *format, ...);  // Custom log function
+
 #define LOGGER_LOG_LEVEL 4     //Set log level for this module
 #include "ControlAssist.h"
-WEB_SERVER *ControlAssist::_server = NULL;
-WebSocketsServer *ControlAssist::_pWebSocket = NULL;
-std::vector<ctrlPairs> ControlAssist::_ctrls;
-std::vector<String> ControlAssist::_chnToKeys;
-WebSocketServerEventG ControlAssist::_ev;
-uint8_t ControlAssist::_clientsNum;
 
 ControlAssist::ControlAssist() { 
   _server = NULL;
-  _pWebSocket = NULL; 
+  _socket = NULL; 
   _wsEnabled = false; 
   _ev = NULL;
   _html_headers = CONTROLASSIST_HTML_HEADER;
@@ -35,7 +32,7 @@ ControlAssist::ControlAssist() {
 
 ControlAssist::ControlAssist(uint16_t port)
 : ControlAssist(){
-  _port = port;
+  _port = port;  
 }
 // Start websockets
 void ControlAssist::begin(){
@@ -60,18 +57,18 @@ void ControlAssist::close(){
 
 // Start the websocket server
 void ControlAssist::startWebSockets(){
-  if(_pWebSocket) return;
-  _pWebSocket = new WebSocketsServer(_port);
-  _pWebSocket->begin();
-  _pWebSocket->onEvent(this->webSocketEvent);
+  if(_socket) return;
+  _socket = new WebSocketsServer(_port);
+  _socket->onEvent( std::bind(&ControlAssist::webSocketEvent, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4) );  
+  _socket->begin();
   LOG_I("Started web sockets at port: %u\n", _port);
 }
 // Stop the websocket server
 void ControlAssist::stopWebSockets(){
-  if(_pWebSocket == NULL) return;
-  _pWebSocket->close();
-  delete _pWebSocket;
-  _pWebSocket = NULL;
+  if(_socket == NULL) return;
+  _socket->close();
+  delete _socket;
+  _socket = NULL;
   LOG_I("Stoped web sockets at port: %u\n", _port);
 }
 // Get the val of a given key, Empty on not found
@@ -119,7 +116,7 @@ bool ControlAssist::set(int keyPos, String val, bool forceSend) {
   // send message to client
   if(_clientsNum > 0 && (forceSend || changed)){
     String payload = String(_ctrls[keyPos].readNo) + "\t" + _ctrls[keyPos].val;
-    if(_pWebSocket) _pWebSocket->broadcastTXT(payload);
+    if(_socket) _socket->broadcastTXT(payload);
     LOG_V("Send payload: %s\n", payload.c_str());
   } 
   return true; 
@@ -151,7 +148,7 @@ bool ControlAssist::put(String key, String val, bool forceSend, bool forceAdd) {
   //Send message to client
   if(_clientsNum > 0 && (forceSend || changed)){
     String payload = String(_ctrls[keyPos].readNo) + "\t" + _ctrls[keyPos].val;
-    if(_pWebSocket) _pWebSocket->broadcastTXT(payload);
+    if(_socket) _socket->broadcastTXT(payload);
     LOG_V("Send payload: %s\n", payload.c_str());
   } 
   return true;
@@ -175,14 +172,14 @@ void ControlAssist::setAutoSendOnCon(bool send) {
 }
 
 // On websocket connection send the keys with auto send flag to clients
-void ControlAssist::autoSendKeys(){
+void ControlAssist::autoSendKeys(uint8_t num){
   uint8_t row = 0;
   while (row++ < _ctrls.size()) { 
     LOG_V("Checking row: %s ,%i\n", _ctrls[row - 1].key.c_str(), _ctrls[row - 1].autoSendOnCon );
     if(_ctrls[row - 1].autoSendOnCon){
       String payload = String(_ctrls[row - 1].readNo) + "\t" + _ctrls[row - 1].val;
-      if(_pWebSocket) _pWebSocket->broadcastTXT(payload);
-      LOG_D("Auto send payload: %s\n", payload.c_str());
+      if(_socket) _socket->broadcastTXT(payload);
+      LOG_D("Auto send payload: %s on client num: %u\n", payload.c_str(), num);
     }
   }
 }
@@ -288,13 +285,13 @@ void ControlAssist::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload
           break;
       case WStype_CONNECTED:
           {
-            IPAddress ip = _pWebSocket->remoteIP(num);
+            IPAddress ip = _socket->remoteIP(num);
             LOG_I("Websocket [%u] connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
             _clientsNum++;
             // send message to client
-            _pWebSocket->sendTXT(num, "0\tCon ");
+            _socket->sendTXT(num, "0\tCon ");
             //Send keys selected
-            autoSendKeys();
+            autoSendKeys(num);
           }
           break;
       case WStype_TEXT:
@@ -320,7 +317,7 @@ void ControlAssist::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload
             // Update all other connected clients
             if( _clientsNum > 1 ){
               for(uint8_t i=0; i<_clientsNum; ++i){
-                if( i != num ) _pWebSocket->sendTXT(i, payload);
+                if( i != num ) _socket->sendTXT(i, payload);
               }
             }
           }
@@ -341,7 +338,7 @@ void ControlAssist::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload
 }
 
 // Build the initialization java script 
-String ControlAssist::getInitScript(){
+String ControlAssist::getInitScript(){ 
  String ctlPort = "const port = " + String(_port)+";";
  String ctlByNo = "const ctlByNo = { ";
  String ctlbyName = "const ctlbyName = { ";
@@ -363,7 +360,7 @@ void ControlAssist::sendHtml(WEB_SERVER &server){
   server.sendContent(_html_headers,strlen(_html_headers));
   String definitions = getInitScript();
   LOG_V("Script %s\n", definitions.c_str());
-  String scripts = "<script type=\"text/javascript\">";
+  String scripts = "<script type=\"text/javascript\">\n";
   scripts += definitions;
   scripts += CONTROLASSIST_SCRIPT_INIT;
   scripts += CONTROLASSIST_SCRIPT_WEBSOCKETS_CLIENT;  
