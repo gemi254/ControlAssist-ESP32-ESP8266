@@ -11,20 +11,18 @@
 
 
 #define LOGGER_LOG_LEVEL 5
-#include <ControlAssist.h>  // Control assist class
+#include <ControlAssist.h>            // Control assist class
 
-// Put connection info here. 
-// On empty an AP will be started
-const char st_ssid[]=""; 
-const char st_pass[]="";
-unsigned long pingMillis = millis();  // Ping 
+const char st_ssid[]="";              // Put connection SSID here. On empty an AP will be started
+const char st_pass[]="";              // Put your wifi passowrd.
+unsigned long pingMillis = millis();  // Ping millis
 
 #ifndef LED_BUILTIN
 #define LED_BUILTIN 22
 #endif
 
 int ledLevel = 0;
-ControlAssist ctrl; // Control assist class
+ControlAssist ctrl;                   // Control assist class
 
 PROGMEM const char HTML_BODY[] = R"=====(
 <style>
@@ -114,10 +112,10 @@ lampLevel.addEventListener("wsChange", (event) => {
 </body>
 </html>
 )=====";
-
+// Set led brightness
 void lampLevel(){
   ledLevel = ctrl["lampLevel"].toInt();
-  LOG_D("lampLevel: %li\n", lampLevel);
+  LOG_D("lampLevel: %i\n", ledLevel);
   analogWrite(LED_BUILTIN, 255 - ledLevel);
 }
 
