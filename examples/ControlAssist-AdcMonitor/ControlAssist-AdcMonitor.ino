@@ -10,14 +10,13 @@
 #endif
 
 #define LOGGER_LOG_LEVEL 5
-#include "adcMonitorPmem.h"  // Html page Program mem
-#include <ControlAssist.h>   // Control assist class
+#include "adcMonitorPmem.h"                 // Html page Program mem
+#include <ControlAssist.h>                  // Control assist class
 
-// Put connection info here. 
-// On empty an AP will be started
-const char st_ssid[]=""; 
-const char st_pass[]="";
-unsigned long pingMillis = millis();  // Ping 
+const char st_ssid[]="";                    // Put connection SSID here. On empty an AP will be started
+const char st_pass[]="";                    // Put your wifi passowrd.
+unsigned long pingMillis = millis();        // Ping millis
+
 unsigned long speed = 40;
 bool isPlaying = false;
 #ifdef ESP32
@@ -29,25 +28,25 @@ int adcPins[] ={ 0 };
 #endif
 
 ControlAssist ctrl; // Control assist class
+static int ctrlsNdx[ sizeof(adcPins) / sizeof(int) ]; // Array of control indexes
 
-static int ctrlPos[ sizeof(adcPins) / sizeof(int) ];
 // Init adc ports
 void initAdcadcPins(){
-  for (byte i = 0; i < sizeof(adcPins) / sizeof(int); i = i + 1) {
+  for (byte i = 0; i < sizeof(adcPins) / sizeof(int); i++) {
     LOG_I("Init pin no: %i\n", adcPins[i]);      
     pinMode(adcPins[i], INPUT);    
     ctrl.bind( ("adc_" + String(adcPins[i])).c_str() );
   }
   // Get positions of the variables
-  for (byte i = 0; i < sizeof(adcPins) / sizeof(int); i = i + 1) {
-    ctrlPos[i] = ctrl.getKeyPos(("adc_" + String(adcPins[i])).c_str());
+  for (byte i = 0; i < sizeof(adcPins) / sizeof(int); i ++) {
+    ctrlsNdx[i] = ctrl.getKeyNdx(("adc_" + String(adcPins[i])).c_str());
   }
 }
 // Read adc ports
 void readAdcadcPins(){
-  for (byte i = 0; i < sizeof(adcPins) / sizeof(int); i = i + 1) {
+  for (byte i = 0; i < sizeof(adcPins) / sizeof(int); i++) {
     uint16_t v = analogRead( adcPins[i]);
-    ctrl.set(ctrlPos[i], v);
+    ctrl.set(ctrlsNdx[i], v);
     LOG_N("Read pin no: %i = %u\n", adcPins[i], v);          
   }  
 }
@@ -130,11 +129,14 @@ void setup() {
   // Start web sockets
   ctrl.begin();  
   LOG_I("ControlAssist started.\n");
+   // Setup webserver  
+  server.on("/d", []() {
+    server.send(200, "text/plain", "Serial dump");
+    ctrl.dump();    
+  });
    // Start webserver
   server.begin();
-  LOG_I("HTTP server started\n");
-  
-  
+  LOG_I("HTTP server started\n");  
 }
 
 void loop() {
