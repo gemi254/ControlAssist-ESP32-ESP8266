@@ -19,24 +19,25 @@ uint8_t temprature_sens_read();
 #endif
 
 #define LOGGER_LOG_LEVEL 5
-#include <ControlAssist.h>  // Control assist class
+#include <ControlAssist.h>           // Control assist class
 
-unsigned long pingMillis = millis();  // Ping 
-const char st_ssid[]=""; // Put connection info here
-const char st_pass[]="";
+const char st_ssid[]="";             // Put connection SSID here. On empty an AP will be started
+const char st_pass[]="";             // Put your wifi passowrd.
+unsigned long pingMillis = millis(); // Ping millis
+
 char chBuff[128];
 static bool buttonState = false;
-#define DELAY_MS 1000   // Measurements delay
-ControlAssist ctrl;     // Control assist class
+#define DELAY_MS 1000               // Measurements delay
+ControlAssist ctrl;                 // Control assist class
 
 #include "gaugePMem.h"
 
 // Change handler to handle web sockets changes
-void changeHandler(uint8_t no){
-  String key = ctrl.getKey(no);
+void changeHandler(uint8_t ndx){
+  String key = ctrl[ndx].key;
   if(key == "check_ctrl" ) 
     buttonState = ctrl["check_ctrl"].toInt();
-  LOG_D("changeHandler: %i %s = %s\n",no, key.c_str(), ctrl[key].c_str());
+  LOG_D("changeHandler: ndx: %02i, key: %s = %s\n",ndx, key.c_str(), ctrl[key].c_str());
 }
 
 void setup() {
