@@ -56,7 +56,7 @@ Define and initialize you class
   - `ctrl.bind("html_id", start_value, changeFunction);` if you need also to handle changes
   
 + in your setup specify if you want ot auto send key initial values during web socket connection   
-  - `ctrl.setAutoSendOnCon("html_id",true /*enable / disable*/);`
+  - `ctrl.setAutoSendOnCon("html_id",true /* send: enable/disable */);`
   - `ctrl.put("html_id", value);  // Set a default value to be send`
 
 + Configure web server to handle control assist page on a uri
@@ -77,13 +77,13 @@ Define and initialize you class
 Controlling your elements inside you loop function
 
 + Change the values of html elements
-  - `ctrl.put("html_id", value );`
+  - `ctrl.put("html_id", value,  /* forceSend: send even no change */, /* forceAdd: add key if not exists */ );`
 
 + Read current value of html element
   - `html_val = ctrl["html_id"]`
 
 + Handle changes inside your code with a handler function
-  - `void globalChangeFuncion(uint8_t no){  String key = ctrl.getKey(no); int val = ctrl[key].toInt() }`
+  - `void globalChangeFuncion(uint8_t ndx){  String key = ctrl[ndx].key; int val = ctrl[ndx].val.toInt() }`
   
 + Inside your main loop() call ControlAssist loop() to handle web sockets server clients
   - `ctrl.loop();`
