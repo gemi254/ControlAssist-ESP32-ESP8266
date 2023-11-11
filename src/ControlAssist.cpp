@@ -34,6 +34,7 @@ ControlAssist::ControlAssist(uint16_t port)
 : ControlAssist(){
   _port = port;  
 }
+
 // Start websockets
 void ControlAssist::begin(){
   if(!_wsEnabled){
@@ -72,50 +73,45 @@ void ControlAssist::stopWebSockets(){
   LOG_I("Stoped web sockets at port: %u\n", _port);
 }
 // Get the val of a given key, Empty on not found
-String ControlAssist::get(String key) {
-  int keyPos = getKeyPos(key);
-  if (keyPos >= 0) {
-    return _ctrls[keyPos].val;        
+String ControlAssist::getVal(String key) {
+  int keyNdx = getKeyNdx(key);
+  if (keyNdx >= 0) {
+    return _ctrls[keyNdx].val;        
   }
   return String(""); 
 }
-// Get the key of a channel
-String ControlAssist::getKey(uint8_t channel){
-  if(channel<=0 || channel >= (uint8_t)_chnToKeys.size() ) return "";
-  return _chnToKeys[channel];
-}
 
 // Add vectors by key (name in confPairs)
-size_t ControlAssist::add(String key, String val){      
-  size_t cnt = _ctrls.size();
-  ctrlPairs d = { key, "", cnt + 1, NULL, false };
+size_t ControlAssist::add(String key, String val){          
+  ctrlPairs d = { key, "", NULL, false };
   return add(d);
 }   
 // Add vectors pairs
 size_t ControlAssist::add(ctrlPairs &c){
-  _ctrls.push_back({c});  
+  _ctrls.push_back({c});
+  LOG_V("Added key: %s\n", c.key.c_str());  
   return _ctrls.size();
 }
-// Update the val at pos, (int)
-bool ControlAssist::set(int keyPos, int val, bool forceSend) {
-  return set(keyPos, String(val), forceSend);
+// Set the val at pos, (int)
+bool ControlAssist::set(int keyNdx, int val, bool forceSend) {
+  return set(keyNdx, String(val), forceSend);
 }
-// Update the val at pos, (string)
-bool ControlAssist::set(int keyPos, String val, bool forceSend) {
+// Set the val at pos, (string)
+bool ControlAssist::set(int keyNdx, String val, bool forceSend) {
   bool changed = false;
-  if (keyPos >= 0 && (size_t)keyPos < _ctrls.size() ) {
-    if( _ctrls[keyPos].val != val){
-      LOG_V("Set [%i] = %s\n", keyPos, val.c_str()); 
-      _ctrls[keyPos].val = val;
+  if (keyNdx >= 0 && (size_t)keyNdx < _ctrls.size() ) {
+    if( _ctrls[keyNdx].val != val){
+      LOG_V("Set [%i] = %s\n", keyNdx, val.c_str()); 
+      _ctrls[keyNdx].val = val;
       changed = true;
     }
   }else{
-    LOG_W("Set failed on pos: [%i] = %s\n", keyPos, val.c_str());
+    LOG_W("Set invalid ndx: [%i] = %s\n", keyNdx, val.c_str());
     return false;    
   } 
-  // send message to client
+  // Send message to client
   if(_clientsNum > 0 && (forceSend || changed)){
-    String payload = String(_ctrls[keyPos].readNo) + "\t" + _ctrls[keyPos].val;
+    String payload = String(keyNdx + 1) + "\t" + val;
     if(_socket) _socket->broadcastTXT(payload);
     LOG_V("Send payload: %s\n", payload.c_str());
   } 
@@ -129,25 +125,25 @@ bool ControlAssist::put(String key, int val, bool forceSend, bool forceAdd) {
     
 // Update the val of key = val (string) forceAdd to add it even if not exists, forceSend = false to send changes only
 bool ControlAssist::put(String key, String val, bool forceSend, bool forceAdd) { 
-  int keyPos = getKeyPos(key);
+  int keyNdx = getKeyNdx(key);
   bool changed = false;
-  if (keyPos >= 0 && (size_t)keyPos < _ctrls.size() ) {
-    if( _ctrls[keyPos].val != val){
-      LOG_V("Put [%i] = %s\n", keyPos, val.c_str()); 
-      _ctrls[keyPos].val = val;
+  if (keyNdx >= 0 && (size_t)keyNdx < _ctrls.size() ) {
+    if( _ctrls[keyNdx].val != val){
+      LOG_V("Put [%i] = %s\n", keyNdx, val.c_str()); 
+      _ctrls[keyNdx].val = val;
       changed = true;
     }
   }else if(forceAdd) {
-    keyPos = add(key, val);
+    keyNdx = add(key, val);
     sort();
     changed = true;
   }else{
-    LOG_W("Put failed on key: %s = %s\n", key.c_str(), val.c_str());
+    LOG_W("Put failed on key: %s,  val: %s\n", key.c_str(), val.c_str());
     return false;
   }
   //Send message to client
   if(_clientsNum > 0 && (forceSend || changed)){
-    String payload = String(_ctrls[keyPos].readNo) + "\t" + _ctrls[keyPos].val;
+    String payload = String(keyNdx + 1) + "\t" + val;
     if(_socket) _socket->broadcastTXT(payload);
     LOG_V("Send payload: %s\n", payload.c_str());
   } 
@@ -155,9 +151,9 @@ bool ControlAssist::put(String key, String val, bool forceSend, bool forceAdd) {
 }
 // Set the auto send on ws connection flag on key
 bool ControlAssist::setAutoSendOnCon(String key, bool send) {
-  int keyPos = getKeyPos(key);
-  if (keyPos >= 0 && (size_t)keyPos < _ctrls.size() ) {
-    _ctrls[keyPos].autoSendOnCon = send;
+  int keyNdx = getKeyNdx(key);
+  if (keyNdx >= 0 && (size_t)keyNdx < _ctrls.size() ) {
+    _ctrls[keyNdx].autoSendOnCon = send;
     return true;
   }
   LOG_E("Set auto send failed on key: %s\n", key.c_str());
@@ -177,28 +173,28 @@ void ControlAssist::autoSendKeys(uint8_t num){
   while (row++ < _ctrls.size()) { 
     LOG_V("Checking row: %s ,%i\n", _ctrls[row - 1].key.c_str(), _ctrls[row - 1].autoSendOnCon );
     if(_ctrls[row - 1].autoSendOnCon){
-      String payload = String(_ctrls[row - 1].readNo) + "\t" + _ctrls[row - 1].val;
+      String payload = String(row) + "\t" + _ctrls[row - 1].val;
       if(_socket) _socket->broadcastTXT(payload);
-      LOG_D("Auto send payload: %s on client num: %u\n", payload.c_str(), num);
+      LOG_D("Auto send to: %s, client num: %u, payload: %s\n",_ctrls[row - 1].key.c_str(), num, payload.c_str());
     }
   }
 }
 
 // Get the location of given key to retrieve control
-int ControlAssist::getKeyPos(String key) {
-  if (_ctrls.empty()) return -1;
+int ControlAssist::getKeyNdx(String key) {
+  if (_ctrls.empty() || key == "") return -1;  
   auto lower = std::lower_bound(_ctrls.begin(), _ctrls.end(), key, [](
     const ctrlPairs &a, const String &b) { 
     return a.key < b;}
   );
-  int keyPos = std::distance(_ctrls.begin(), lower); 
-  if (key == _ctrls[keyPos].key) return keyPos;
+  int keyNdx = std::distance(_ctrls.begin(), lower); 
+  if (key == _ctrls[keyNdx].key) return keyNdx;
   else LOG_V("Key %s not exist\n", key.c_str()); 
   return -1; // not found
 }
 
 // Return next key and val from configs on each call in key order
-bool ControlAssist::getNextKeyVal(ctrlPairs &c) {
+bool ControlAssist::getNextPair(ctrlPairs &c) {
   static uint8_t row = 0;
   if (row++ < _ctrls.size()) { 
     c = _ctrls[row - 1];
@@ -219,14 +215,12 @@ void ControlAssist::sort(){
 
 // Dump config items
 void ControlAssist::dump(){
-  LOG_I("* Dump channels to keys *\n");
-  for(size_t row = 0; row< _chnToKeys.size(); row++) {
-    LOG_I("%i = %s\n", row + 1, _chnToKeys[row].c_str());
-  }
-  LOG_I("* Dump controls *\n");
-  ctrlPairs c;
-  while (getNextKeyVal(c)){
-    LOG_I("[%u]: a:%i, %s = %s \n", c.readNo, c.autoSendOnCon, c.key.c_str(), c.val.c_str() );
+  LOG_I("- Dump binded controls -\n");
+  ctrlPairs c; 
+  uint8_t ndx = 0;
+  while (getNextPair(c)){
+    LOG_I("Chn: %02u, autoSend: %i, '%s': %s \n", ndx + 1,  c.autoSendOnCon, c.key.c_str(), c.val.c_str() );
+    ndx++;
   }
 }
 
@@ -254,18 +248,16 @@ int ControlAssist::bind(const char* key, const int val, WebSocketServerEvent ev)
 
 // Bind a html control with id = key and default char val to a local variable with an event function
 int ControlAssist::bind(const char* key, const char* val, WebSocketServerEvent ev){
-  int p = getKeyPos(key);
+  int p = getKeyNdx(key);
   if(p >= 0){
     LOG_E("Bind key: %s failed. Already exists in pos %i!\n", key,  p);
     return -1;
-  }
-  size_t cnt = _ctrls.size();
-  ctrlPairs d = { key, val, cnt + 1, ev, false };
-  LOG_I("Binding key %s = %s, %i\n", key, val, cnt); 
-  _ctrls.push_back(d);
-  sort();
-  _chnToKeys.push_back(key);
-  return getKeyPos(key);
+  }  
+  ctrlPairs ctrl = { key, val, ev, false };
+  LOG_I("Binding key: '%s', val:  %s, chn: %02i\n", key, val, _ctrls.size() +2); 
+  _ctrls.push_back(ctrl);
+  sort();  
+  return getKeyNdx(key);
 }
 
 // Add a global callback function to handle changes
@@ -280,50 +272,74 @@ void ControlAssist::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload
       case WStype_PONG: 
           break;
       case WStype_DISCONNECTED:
-          LOG_E("Websocket [%u] Disconnected!\n", num);
+          LOG_E("Client no: %02u Disconnected!\n", num);
           _clientsNum--;
           break;
       case WStype_CONNECTED:
           {
             IPAddress ip = _socket->remoteIP(num);
-            LOG_I("Websocket [%u] connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+            LOG_I("Client no: %02u connect from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
             _clientsNum++;
-            // send message to client
+            // Send message to client
             _socket->sendTXT(num, "0\tCon ");
-            //Send keys selected
+            // Send keys selected
             autoSendKeys(num);
           }
           break;
       case WStype_TEXT:
           {
             uint8_t * pload = payload;
-            char cNo = ( (char)pload[0]);
-            int id = cNo - '0' - 1;
-            if(id < 0) return;
-            pload += 2;
+            // Get index first 3 max bytes until tab
+            char chn[3];
+            size_t i = 0;
+            while((char)pload[i] != '\t' && i < 3){
+              chn[i]=( (char)pload[i] );
+              i++;
+              if(i >= length) break;
+            }
+            if(i < length) pload += i + 1;
+            
+            uint8_t ndx = (uint8_t)atoi(chn);
             std::string val = reinterpret_cast<char *>(pload);
-         
-            int no = getKeyPos(_chnToKeys[id]);
-            _ctrls[no].val = String(val.c_str());
-            //Call control change handler
-            if(_ctrls[no].ev) {
-              _ctrls[no].ev();
+
+            LOG_N("Msg ndx: %u, val: %s\n", ndx, val.c_str());
+
+            if(ndx == 0 ){ //System message
+              if(val == "C"){ // Close connection message
+                LOG_W("Received close connection msg. \n");
+                //_socket->disconnect();
+              }else{
+                LOG_V("Sys msg: %s \n",val.c_str());
+              }
+              return;
             }
-            //Call global change handler
+
+            // Zero based index, index 0 is for system messages
+            ndx = ndx - 1;
+            if(ndx >= _ctrls.size() ) return;
+
+            // Change val
+            _ctrls[ndx].val = String(val.c_str());
+   
+            // Call control's change handler
+            if(_ctrls[ndx].ev) {
+              _ctrls[ndx].ev();
+            }
+            // Call global change handler
             if(_ev){
-              _ev(id);
+              _ev(ndx);
             }
-            LOG_V("[%u] cid: %i no: %i get Text: %s\n", num, id, no, val.c_str());
+            LOG_V("Ctrl msg, client: %02u, ndx: %02u, key: '%s', val: %s\n", num, ndx, _ctrls[ndx].key.c_str(), val.c_str());
             // Update all other connected clients
             if( _clientsNum > 1 ){
-              for(uint8_t i=0; i<_clientsNum; ++i){
+              for(uint8_t i = 0; i < _clientsNum; ++i){
                 if( i != num ) _socket->sendTXT(i, payload);
               }
             }
           }
           break;
       case WStype_BIN:
-          LOG_D("[%u] get binary length: %u\n", num, length);
+          LOG_D("Client no: %02u, get binary length: %u\n", num, length);
           // send message to client
           // webSocket.sendBIN(num, payload, length);
           break;
@@ -332,7 +348,7 @@ void ControlAssist::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload
       case WStype_FRAGMENT_BIN_START:
       case WStype_FRAGMENT:
       case WStype_FRAGMENT_FIN:
-        LOG_E("[%u] WS error: %x\n", num, type);
+        LOG_E("Client %02u, WS error: %x\n", num, type);
         break;
     }
 }
@@ -340,18 +356,17 @@ void ControlAssist::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload
 // Build the initialization java script 
 String ControlAssist::getInitScript(){ 
  String ctlPort = "const port = " + String(_port)+";";
- String ctlByNo = "const ctlByNo = { ";
- String ctlbyName = "const ctlbyName = { ";
- for(uint8_t r = 0; r< _chnToKeys.size(); r++) { 
-    int no = getKeyPos(_chnToKeys[r]);
-    ctlByNo   += "'" + String(_ctrls[no].readNo) + "': '" + _ctrls[no].key + "', ";
-    ctlbyName += "'" + String(_ctrls[no].key) + "': '" + _ctrls[no].readNo + "', ";
+ String keysToNdx = "const keysToNdx = { ";
+ String ndxTokeys = "const ndxTokeys = { "; 
+ for(uint8_t no = 0; no< _ctrls.size(); no++) {     
+    keysToNdx  += "'" + String(_ctrls[no].key) + "': " + no + ", ";
+    ndxTokeys  += "'" + String(no) + "': '" + String(_ctrls[no].key) + "', ";    
   }
-  if(ctlByNo.endsWith(", ")) ctlByNo = ctlByNo.substring(0, (ctlByNo.length() - 2));
-  if(ctlbyName.endsWith(", ")) ctlbyName = ctlbyName.substring(0, (ctlbyName.length() - 2));
-  ctlByNo   += "};";
-  ctlbyName += "};";
-  return ctlPort + "\n" + ctlByNo +"\n" + ctlbyName;
+  if(keysToNdx.endsWith(", ")) keysToNdx = keysToNdx.substring(0, (keysToNdx.length() - 2));
+  if(ndxTokeys.endsWith(", ")) ndxTokeys = ndxTokeys.substring(0, (ndxTokeys.length() - 2));
+  keysToNdx += "};";
+  ndxTokeys += "};";
+  return ctlPort + "\n" + keysToNdx + "\n" +  ndxTokeys + "\n";
 }
 
 // Render html to client
