@@ -2,7 +2,7 @@
 PROGMEM const char CONTROLASSIST_SCRIPT_INIT[] = R"=====(
 const $ = document.querySelector.bind(document);
 const $$ = document.querySelectorAll.bind(document);
-var ctrlNames = []
+var ndxToElm = []
 
 /* * * * Control assist functions * * * */
 function updateKeys(event){
@@ -21,19 +21,18 @@ function updateKeys(event){
 }
 function updateKey(key, value) {          
   if(value == null ) return;  
-  sendWsTxt(ctlbyName[key] + "\t" + value);
+  sendWsTxt(keysToNdx[key] + 1 + "\t" + value);
 }
 
 function wsUpdatedKeys(event){
-  if(dbg) console.log('wsUpdatedKeys:', event.target.name)
+  if(dbg) console.log('wsUpdatedKeys: ', keysToNdx[ event.target.id], ', key: ', event.target.id);
 }
 
 function initWebSocketCtrls(){
-  for(var key in ctlbyName) {
+  for(var i in ndxTokeys ) {
+    const key = ndxTokeys[i];    
     const elm = document.getElementById(key);
-    if(!elm){
-      ctrlNames.push([key, null]);
-    }else{
+    if(elm){
       if(elm.type === "button"){  //|| elm.type === "submit"){        
         elm.addEventListener("click", updateKeys);     
       }else if(elm.type === "checkbox"){        
@@ -47,7 +46,7 @@ function initWebSocketCtrls(){
       // Websocket events
       elm.addEventListener("wsChange", wsUpdatedKeys);
     }
-    ctrlNames.push([key, elm]); 
+    ndxToElm[i] = elm;
   }
 }
 )=====";
@@ -55,13 +54,12 @@ function initWebSocketCtrls(){
 //Scripts to handle websockets
 PROGMEM const char CONTROLASSIST_SCRIPT_WEBSOCKETS_CLIENT[] = R"=====(
 /* * * * WebSockets functions * * * */
-//const wsServer = "ws://10.1.0.169:81/";
 let webserver;
 if(port)
   wsServer = "ws://" + document.location.host + ":" + port + "/";
 else
   wsServer = "ws://" + document.location.host + ":81/";
-const dbg = false;
+const dbg = true;
 let ws = null;
 let hbTimer = null;
 let refreshInterval = 15000;
@@ -81,7 +79,7 @@ function initWebSocket() {
   ws.onerror = onWsError;
 }
 async function closeWS() {
-  ws.send('0:C');
+  ws.send('0\tC');
   await sleep(500);
   ws.close();
 }
@@ -108,13 +106,15 @@ function onWsOpen(event) {
 // Handle websocket messages
 function handleWsMessage(msg){   
   var itm = msg.split("\t");
-  const key = ctlByNo[ itm[0] ];
-  const val = itm[1] 
-  const n = parseInt(itm[0]) - 1;
-  if(n < 0 || ctrlNames.length < 1) return;
-  const elm = ctrlNames[n][1];
+  const chn = parseInt(itm[0]);
+  if(chn < 1 || ndxToElm.length < 1) return;
+
+  const ndx = chn - 1;
+  const elm = ndxToElm[ ndx ];
+  const val = itm[1]     
+  
   if(!elm){
-    console.log("Control not found: ", n, ctrlNames)
+    console.log("Control no: " , ndx, " not found")
     return;
   } 
   if(elm.type === undefined){
