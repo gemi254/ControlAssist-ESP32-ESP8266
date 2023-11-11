@@ -17,11 +17,9 @@ void _log_printf(const char *format, ...);  // Custom log function, defined in w
 
 WebLogger weblog(84);         // The logger class on port 84 (!Must named weblog)
 
-// Put your connection credentials here. 
-// On empty an AP will be started
-const char st_ssid[]="mdk3"; 
-const char st_pass[]="2843028858";
-unsigned long pingMillis = millis();  // Ping 
+const char st_ssid[]="";      // Put connection SSID here. On empty an AP will be started
+const char st_pass[]="";      // Put your wifi passowrd.
+unsigned long pingMillis = millis();  // Ping millis
 
 // Log debug info
 void debugMemory(const char* caller) {
