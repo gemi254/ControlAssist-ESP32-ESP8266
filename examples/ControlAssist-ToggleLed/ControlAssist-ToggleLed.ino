@@ -10,19 +10,17 @@
 #endif
 
 #define LOGGER_LOG_LEVEL 5
-#include <ControlAssist.h>  // Control assist class
+#include <ControlAssist.h>              // Control assist class
 
-// Put connection info here. 
-// On empty an AP will be started
-const char st_ssid[]=""; 
-const char st_pass[]="";
-unsigned long pingMillis = millis();  // Ping 
+const char st_ssid[]="";                // Put connection SSID here. On empty an AP will be started
+const char st_pass[]="";                // Put your wifi passowrd.
+unsigned long pingMillis = millis();    // Ping millis
 
 bool ledState = false;
 #ifndef LED_BUILTIN
 #define LED_BUILTIN 22
 #endif
-ControlAssist ctrl;
+ControlAssist ctrl;                     // Control assist class
 
 PROGMEM const char HTML_BODY[] = R"=====(
 <style>
@@ -138,6 +136,7 @@ toggleLed.addEventListener("wsChange", (event) => {
 
 void ledChangeHandler(){
   ledState = ctrl["toggleLed"].toInt();
+  LOG_D("ledChangeHandler state: %i\n", ledState);
   toggleLed(ledState);
 }
 
@@ -198,6 +197,11 @@ void setup() {
   ctrl.dump(); 
   LOG_V("ControlAssist started.\n");
   
+  server.on("/d", []() { // Dump controls
+    server.send(200, "text/plain", "Serial dump");
+    ctrl.dump();
+  });
+
   // Start webserver  
   server.begin();
   LOG_V("HTTP server started\n");
