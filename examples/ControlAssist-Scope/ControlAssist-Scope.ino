@@ -12,15 +12,13 @@
 #endif
 
 #define LOGGER_LOG_LEVEL 5
-#include <ControlAssist.h>  // Control assist class
+#include <ControlAssist.h>            // Control assist class
 
-// Put connection info here. 
-// On empty an AP will be started
-const char st_ssid[]=""; 
-const char st_pass[]="";
-unsigned long pingMillis = millis();  // Ping 
+const char st_ssid[]="";              // Put connection SSID here. On empty an AP will be started
+const char st_pass[]="";              // Put your wifi passowrd.
+unsigned long pingMillis = millis();  // Ping millis
 bool isPlaying = false;
-unsigned long speed = 40;
+unsigned long speed = 40;             // Read delay
 static int adc_pos = -1;
 
 ControlAssist ctrl;
@@ -71,8 +69,6 @@ void setup() {
     LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());      
     if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");     
   }
-
-
 
   // Control assist setup
   ctrl.setHtmlHeaders(HTML_HEADERS);
