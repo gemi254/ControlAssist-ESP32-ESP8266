@@ -3,7 +3,7 @@
 
 #include <WebSocketsServer.h>
 
-#define CT_CLASS_VERSION "1.0.7"        // Class version
+#define CT_CLASS_VERSION "1.0.7a"        // Class version
 
 // Define Platform libs
 #if defined(ESP32)
