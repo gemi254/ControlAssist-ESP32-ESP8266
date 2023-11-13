@@ -1,25 +1,25 @@
 #if defined(ESP32)
   #include <WebServer.h>
-  WebServer server(80);  
   #include <ESPmDNS.h>  
+  WebServer server(80);  
 #else
   #include <ESP8266WiFi.h>
   #include <ESP8266WebServer.h>  
-  ESP8266WebServer  server(80);
   #include <ESP8266mDNS.h>
+  ESP8266WebServer  server(80);
 #endif
 
-#define LOGGER_LOG_MODE  3    // Set default logging mode using external function
-#define LOGGER_LOG_LEVEL 5    // Define log level for this module
-void _log_printf(const char *format, ...);  // Custom log function, defined in weblogger.h
-#include <ControlAssist.h>    // Control assist class
-#include "webLogger.h"        // Web based log using web sockets
+#define LOGGER_LOG_MODE  3              // Set default logging mode using external function
+#define LOGGER_LOG_LEVEL 5              // Define log level for this module
+static void _log_printf(const char *format, ...);  // Custom log function, defined in weblogger.h
+#include <ControlAssist.h>              // Control assist class
+#include "remoteLogViewer.h"            // Web based remote log page using web sockets
 
-WebLogger weblog(84);         // The logger class on port 84 (!Must named weblog)
+RemoteLogViewer remoteLogView(85);      // The remote live log viewer page
 
-const char st_ssid[]="";      // Put connection SSID here. On empty an AP will be started
-const char st_pass[]="";      // Put your wifi passowrd.
-unsigned long pingMillis = millis();  // Ping millis
+const char st_ssid[]="";                // Put connection SSID here. On empty an AP will be started
+const char st_pass[]="";                // Put your wifi passowrd.
+unsigned long pingMillis = millis();    // Ping millis
 
 // Log debug info
 void debugMemory(const char* caller) {
@@ -34,8 +34,12 @@ void setup() {
   Serial.begin(115200);
   Serial.print("\n\n\n\n");
   Serial.flush();
-  LOG_I("Starting..\n");  
   
+  // Setup the remote web debugger in order to store log lines, url "/log"
+  // When no connection is present store log lines in a buffer until connection
+  remoteLogView.setup(server);
+
+  LOG_I("Starting..\n");    
   // Connect WIFI ?
   if(strlen(st_ssid)>0){
     LOG_D("Connect Wifi to %s.\n", st_ssid);
@@ -65,13 +69,14 @@ void setup() {
     if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");     
   }
   
-  // Setup a weblogger on url "/log"
-  weblog.setup(server);
-  
+  // Start web lgo viewer sockets 
+  remoteLogView.begin();  
+  LOG_I("RemoteLogViewer started.\n"); 
+
   // Setup webserver  
   server.on("/", []() {
     server.send(200, "text/html", "<h1>This is root page</h1><br><a target='_new' href='/log'>View log</a>");
-    weblog._ctrl.dump();
+    remoteLogView.dump();
   });
   
   // Start webserver
@@ -80,7 +85,7 @@ void setup() {
 }
 
 void loop() {
-  if (millis() - pingMillis >= 1000){
+  if (millis() - pingMillis >= 2000){
     debugMemory("Loop");
     pingMillis = millis();
   }
@@ -91,6 +96,6 @@ void loop() {
   // Handler webserver clients
   server.handleClient();
   // Handle websockets
-  weblog.loop();
+  remoteLogView.loop();
 }
 
