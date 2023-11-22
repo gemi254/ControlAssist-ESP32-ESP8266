@@ -22,7 +22,11 @@ setGlobalCallback KEYWORD2
 setHtmlHeaders KEYWORD2
 setHtmlBody KEYWORD2
 setHtmlFooter KEYWORD2
+setHtmlHeadersFile KEYWORD2
+setHtmlBodyFile KEYWORD2
+setHtmlFooterFile KEYWORD2
 getInitScript KEYWORD2
 setGlobalCallback KEYWORD2
 sendHtml KEYWORD2
 getClientsNum KEYWORD2
+streamFile KEYWORD2
