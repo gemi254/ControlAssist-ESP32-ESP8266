@@ -1,20 +1,18 @@
+#define LOGGER_LOG_MODE  3              // Set default logging mode using external function
+#define LOGGER_LOG_LEVEL 5              // Define log level for this module
+static void _log_printf(const char *format, ...);  // Custom log function, defined in weblogger.h
+
+#include <ControlAssist.h>              // Control assist class
+
 #if defined(ESP32)
-  #include <WebServer.h>
   #include <ESPmDNS.h>  
   WebServer server(80);  
 #else
-  #include <ESP8266WiFi.h>
-  #include <ESP8266WebServer.h>  
   #include <ESP8266mDNS.h>
   ESP8266WebServer  server(80);
 #endif
 
-#define LOGGER_LOG_MODE  3              // Set default logging mode using external function
-#define LOGGER_LOG_LEVEL 5              // Define log level for this module
-static void _log_printf(const char *format, ...);  // Custom log function, defined in weblogger.h
-#include <ControlAssist.h>              // Control assist class
 #include "remoteLogViewer.h"            // Web based remote log page using web sockets
-
 RemoteLogViewer remoteLogView(85);      // The remote live log viewer page
 
 const char st_ssid[]="";                // Put connection SSID here. On empty an AP will be started
