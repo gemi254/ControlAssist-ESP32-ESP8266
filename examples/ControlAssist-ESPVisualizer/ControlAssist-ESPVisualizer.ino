@@ -3,24 +3,26 @@
   WebServer server(80);  
   #include <ESPmDNS.h>  
   #include "gpioPMemESP32.h"
+  #define BODY_FILE_NAME "/data/ESPWroom32-Vis.html"
   #define TOTAL_PINS 40
 #else
-  #include <ESP8266WiFi.h>
-  #include <ESP8266WebServer.h>  
-  ESP8266WebServer  server(80);
   #include <ESP8266mDNS.h>
-  #include "gpioPMemESP8266.h"
+  #include <ESP8266WebServer.h>
+  ESP8266WebServer  server(80);
+  #define BODY_FILE_NAME "/data/ESP8266Wemos-Vis.html"  
+  //#include "gpioPMemESP8266.h"
   #define TOTAL_PINS 17
 #endif
+
+#define LOGGER_LOG_LEVEL 5
+#include <WebSocketsServer.h> 
+#include <ControlAssist.h>                  // Control assist class
+
+ControlAssist ctrl(81);                     // Web socket control on port 81
 
 const char st_ssid[]="";                    // Put connection SSID here. On empty an AP will be started
 const char st_pass[]="";                    // Put your wifi passowrd.
 unsigned long pingMillis = millis();        // Ping millis
-
-#define LOGGER_LOG_LEVEL 5
-#include <ControlAssist.h>                  // Control assist class
-
-ControlAssist ctrl(81);                     // Web socket control on port 81
 
 #ifndef LED_BUILTIN
 #define LED_BUILTIN 22                      // Define the pin tha the led is connected
@@ -98,6 +100,12 @@ void setup() {
   Serial.begin(115200);
   Serial.print("\n\n\n\n");
   Serial.flush();
+  if (!STORAGE.begin()) {
+    Serial.println("An Error has occurred while mounting SPIFFS");
+    return;
+  }else{
+    LOG_I("Storage statred.\n");  
+  }
   LOG_I("Starting..\n");  
   
   // Connect WIFI ?
@@ -131,13 +139,15 @@ void setup() {
 
   // Setup control assist
   ctrl.setup(server, "/");
-  ctrl.setHtmlBody(HTML_PAGE);
+  // Use default CONTROLASSIST_HTML_HEADER and CONTROLASSIST_HTML_FOOTER
+  ctrl.setHtmlBodyFile(BODY_FILE_NAME);
+  // Bind led
   pinMode(LED_BUILTIN, OUTPUT);
-  //digitalWrite(LED_BUILTIN, HIGH); // Turn LED OFF
+  digitalWrite(LED_BUILTIN, HIGH); // Turn LED OFF
   ctrl.bind("led", readGPIO(LED_BUILTIN));
   
   // Bind all pins
-  for(int i=00; i<TOTAL_PINS; ++i){
+  for(int i=0; i<TOTAL_PINS; ++i){
     String pin = String(i);
     if (i<10) pin = "0" + pin;
     int val = readGPIO(pin.toInt());
@@ -147,16 +157,16 @@ void setup() {
   ctrl.setAutoSendOnCon(true);
   // When a value is changed, globalChangeHandler will be called
   ctrl.setGlobalCallback(globalChangeHandler);
-  ctrl.begin();
-  ctrl.dump();
+  ctrl.begin();  
   LOG_V("ControlAssist started.\n"); 
   
   // Setup webserver  
   server.on("/d", []() { // Dump controls
     server.send(200, "text/plain", "Serial dump");
-    ctrl.dump();
-  });
+    ctrl.dump(&server);
 
+  });
+  
   // Start webserver  
   server.begin();
   LOG_V("HTTP server started\n");
