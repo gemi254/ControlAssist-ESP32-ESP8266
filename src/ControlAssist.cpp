@@ -1,22 +1,6 @@
-#include <Arduino.h>
-#include <sstream>
-#include <vector>
-#if defined(ESP32)
-  #include <WebServer.h>
-#else
-  #include <ESP8266WiFi.h>
-  #include <WiFiClient.h>
-  #include <ESP8266WebServer.h>
-#endif
-
-#include <WebSocketsServer.h>
+#define LOGGER_LOG_LEVEL 4     // Set log level for this module
+#include "ControlAssist.h"     // Control assist class
 #include "controlAssistPMem.h" // Memory static valiables (html pages)
-
-// #define LOGGER_LOG_MODE  3                  // Set default logging mode using external function
-// void _log_printf(const char *format, ...);  // Custom log function
-
-#define LOGGER_LOG_LEVEL 4     //Set log level for this module
-#include "ControlAssist.h"
 
 ControlAssist::ControlAssist() { 
   _server = NULL;
@@ -26,6 +10,10 @@ ControlAssist::ControlAssist() {
   _html_headers = CONTROLASSIST_HTML_HEADER;
   _html_body =  CONTROLASSIST_HTML_BODY;
   _html_footer = CONTROLASSIST_HTML_FOOTER;
+  _html_headers_file = NULL;
+  _html_body_file =  NULL;
+  _html_footer_file = NULL;
+  
   _clientsNum = 0;
   _port = 81;
 }
@@ -64,6 +52,7 @@ void ControlAssist::startWebSockets(){
   _socket->begin();
   LOG_I("Started web sockets at port: %u\n", _port);
 }
+
 // Stop the websocket server
 void ControlAssist::stopWebSockets(){
   if(_socket == NULL) return;
@@ -72,6 +61,7 @@ void ControlAssist::stopWebSockets(){
   _socket = NULL;
   LOG_I("Stoped web sockets at port: %u\n", _port);
 }
+
 // Get the val of a given key, Empty on not found
 String ControlAssist::getVal(String key) {
   int keyNdx = getKeyNdx(key);
@@ -85,17 +75,22 @@ String ControlAssist::getVal(String key) {
 size_t ControlAssist::add(String key, String val){          
   ctrlPairs d = { key, "", NULL, false };
   return add(d);
-}   
+}
+
 // Add vectors pairs
 size_t ControlAssist::add(ctrlPairs &c){
-  _ctrls.push_back({c});
+  _ctrls.push_back( {c} );
+  _keysNdx.push_back( {c.key, _keysNdx.size()  } );
+  sort();
   LOG_V("Added key: %s\n", c.key.c_str());  
   return _ctrls.size();
 }
+
 // Set the val at pos, (int)
 bool ControlAssist::set(int keyNdx, int val, bool forceSend) {
   return set(keyNdx, String(val), forceSend);
 }
+
 // Set the val at pos, (string)
 bool ControlAssist::set(int keyNdx, String val, bool forceSend) {
   bool changed = false;
@@ -125,7 +120,7 @@ bool ControlAssist::put(String key, int val, bool forceSend, bool forceAdd) {
     
 // Update the val of key = val (string) forceAdd to add it even if not exists, forceSend = false to send changes only
 bool ControlAssist::put(String key, String val, bool forceSend, bool forceAdd) { 
-  int keyNdx = getKeyNdx(key);
+  int keyNdx = getKeyNdx(key);  
   bool changed = false;
   if (keyNdx >= 0 && (size_t)keyNdx < _ctrls.size() ) {
     if( _ctrls[keyNdx].val != val){
@@ -135,7 +130,6 @@ bool ControlAssist::put(String key, String val, bool forceSend, bool forceAdd) {
     }
   }else if(forceAdd) {
     keyNdx = add(key, val);
-    sort();
     changed = true;
   }else{
     LOG_W("Put failed on key: %s,  val: %s\n", key.c_str(), val.c_str());
@@ -149,6 +143,7 @@ bool ControlAssist::put(String key, String val, bool forceSend, bool forceAdd) {
   } 
   return true;
 }
+
 // Set the auto send on ws connection flag on key
 bool ControlAssist::setAutoSendOnCon(String key, bool send) {
   int keyNdx = getKeyNdx(key);
@@ -158,7 +153,8 @@ bool ControlAssist::setAutoSendOnCon(String key, bool send) {
   }
   LOG_E("Set auto send failed on key: %s\n", key.c_str());
   return false;
-} 
+}
+
 // Set the auto send on ws connection flag on all keys
 void ControlAssist::setAutoSendOnCon(bool send) {
   uint8_t row = 0;
@@ -182,13 +178,14 @@ void ControlAssist::autoSendKeys(uint8_t num){
 
 // Get the location of given key to retrieve control
 int ControlAssist::getKeyNdx(String key) {
-  if (_ctrls.empty() || key == "") return -1;  
-  auto lower = std::lower_bound(_ctrls.begin(), _ctrls.end(), key, [](
-    const ctrlPairs &a, const String &b) { 
+  if (_keysNdx.empty() || key == "") return -1; 
+  //LOG_I("getKeyNdx, key: %s\n",key.c_str()); 
+  auto lower = std::lower_bound(_keysNdx.begin(), _keysNdx.end(), key, [](
+    const keysNdx &a, const String &b) { 
     return a.key < b;}
   );
-  int keyNdx = std::distance(_ctrls.begin(), lower); 
-  if (key == _ctrls[keyNdx].key) return keyNdx;
+  int keyNdx = std::distance(_keysNdx.begin(), lower); 
+  if (key == _ctrls[ _keysNdx[keyNdx].ndx ].key) return _keysNdx[keyNdx].ndx;
   else LOG_V("Key %s not exist\n", key.c_str()); 
   return -1; // not found
 }
@@ -205,33 +202,55 @@ bool ControlAssist::getNextPair(ctrlPairs &c) {
   return false;
 }
 
-// Sort vectors by key (name in confPairs)
+// Sort vectors by key (name in logKeysNdx)
 void ControlAssist::sort(){
-  std::sort(_ctrls.begin(), _ctrls.end(), [] (
-    const ctrlPairs &a, const ctrlPairs &b) {
+  std::sort(_keysNdx.begin(), _keysNdx.end(), [] (
+    const keysNdx &a, const keysNdx &b) {
     return a.key < b.key;}
   );
 }
 
 // Dump config items
-void ControlAssist::dump(){
-  LOG_I("- Dump binded controls -\n");
+void ControlAssist::dump(WEB_SERVER *server){
+  char outBuff[256];  
+  strcpy(outBuff, "Dump binded controls\n");  
+  if(server){
+    server->setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server->sendContent(String(outBuff));    
+  }else{
+    LOG_I("%s", outBuff);
+  }
   ctrlPairs c; 
   uint8_t ndx = 0;
   while (getNextPair(c)){
-    LOG_I("Chn: %02u, autoSend: %i, '%s': %s \n", ndx + 1,  c.autoSendOnCon, c.key.c_str(), c.val.c_str() );
+    int len =  sprintf(outBuff, "Ndx: %02u, chn: %02u, autoSend: %i, '%s': %s \n", ndx, ndx + 1,  c.autoSendOnCon, c.key.c_str(), c.val.c_str() );
+    if(server) server->sendContent(outBuff, len);
+    else LOG_I("%s", outBuff);
     ndx++;
   }
+
+  strcpy(outBuff, "Dump indexes: \n");
+  if(server) server->sendContent("\n" + String(outBuff));    
+  else LOG_I("%s", outBuff);  
+  size_t i = 0;  
+  while( i < _keysNdx.size() ){
+      int len =  sprintf(outBuff, "No: %02i, ndx: %02i, key: %s\n", i, _keysNdx[i].ndx, _keysNdx[i].key.c_str());      
+      if(server) server->sendContent(outBuff, len);
+      else LOG_I("%s", outBuff);
+      i++;
+  } 
 }
 
 // Bind a html control with id = key to a control variable
 int ControlAssist::bind(const char* key){
   return bind(key, "");
 }
+
 // Bind a html control with id = key and local val to a control variable
 int ControlAssist::bind(const char* key, const int val){  
   return bind(key, String(val).c_str(), NULL);
 }
+
 // Bind a html control with id = key and local val to a control variable
 int ControlAssist::bind(const char* key, const char* val){
   return bind(key, val, NULL);
@@ -254,9 +273,8 @@ int ControlAssist::bind(const char* key, const char* val, WebSocketServerEvent e
     return -1;
   }  
   ctrlPairs ctrl = { key, val, ev, false };
-  LOG_I("Binding key: '%s', val:  %s, chn: %02i\n", key, val, _ctrls.size() +2); 
-  _ctrls.push_back(ctrl);
-  sort();  
+  LOG_I("Binding key: '%s', val:  %s, chn: %02i\n", key, val, _ctrls.size() + 1); 
+  add(ctrl);
   return getKeyNdx(key);
 }
 
@@ -369,10 +387,54 @@ String ControlAssist::getInitScript(){
   return ctlPort + "\n" + keysToNdx + "\n" +  ndxTokeys + "\n";
 }
 
+// Load a file into a string
+bool ControlAssist::loadText(String fPath, String &txt){
+  File file = STORAGE.open(fPath, "r");
+  if (!file || !file.size()) {
+    LOG_E("Failed to load: %s, sz: %u B\n", fPath.c_str(), file.size());
+    return false;
+  }
+  //Load text from file
+  txt = "";
+  while (file.available()) {
+    txt += file.readString();
+  } 
+  LOG_D("Loaded: %s, sz: %u B\n" , fPath.c_str(), txt.length() );          
+  file.close();
+  return true;
+}
+
+// Send a file from spiffs to client    
+void ControlAssist::streamFile(WEB_SERVER &server, const char *htmlFile){
+  if(!STORAGE.exists(htmlFile)){
+    LOG_E("Storage file missing: %s\n", htmlFile);
+    server.sendContent("<p>Storage data file missing: <b>" + String(htmlFile) + "</b></p>");
+    server.sendContent("<p>Please upload this file to ESP storage using `Sketch Data Upload` from your Arduino IDE</p>");
+    return;
+  }
+  #if defined(ESP32)
+  File f = STORAGE.open(htmlFile);
+  #else
+  File f = STORAGE.open(String(htmlFile),"r");
+  #endif 
+  byte chunk[STREAM_CHUNKSIZE];
+  size_t chunksize;
+  do {
+      chunksize = f.read(chunk, STREAM_CHUNKSIZE); 
+      server.sendContent((char *)chunk, chunksize);
+  } while (chunksize != 0);
+  f.close(); 
+}
+
 // Render html to client
 void ControlAssist::sendHtml(WEB_SERVER &server){
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
-  server.sendContent(_html_headers,strlen(_html_headers));
+  if(_html_headers_file){
+    streamFile(server, _html_headers_file);
+  }else{
+    server.sendContent(_html_headers, strlen(_html_headers));
+  }
+
   String definitions = getInitScript();
   LOG_V("Script %s\n", definitions.c_str());
   String scripts = "<script type=\"text/javascript\">\n";
@@ -381,7 +443,17 @@ void ControlAssist::sendHtml(WEB_SERVER &server){
   scripts += CONTROLASSIST_SCRIPT_WEBSOCKETS_CLIENT;  
   scripts += CONTROLASSIST_SCRIPT_INIT_CONTROLS;
   scripts += "</script>";
-  server.sendContent(scripts);
-  server.sendContent(_html_body,strlen(_html_body));
-  server.sendContent(_html_footer,strlen(_html_footer));
+  server.sendContent(scripts); 
+
+  if(_html_body_file){        
+    streamFile(server, _html_body_file);
+  }else{
+    server.sendContent(_html_body, strlen(_html_body));
+  }
+  
+  if(_html_footer_file){
+    streamFile(server, _html_footer_file);    
+  }else{
+    server.sendContent(_html_footer, strlen(_html_footer));
+  }
 }
