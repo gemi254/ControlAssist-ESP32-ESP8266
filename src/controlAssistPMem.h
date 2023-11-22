@@ -104,14 +104,15 @@ function onWsOpen(event) {
   wsHeartBeat();
 }
 // Handle websocket messages
-function handleWsMessage(msg){   
-  var itm = msg.split("\t");
-  const chn = parseInt(itm[0]);
+function handleWsMessage(msg){
+  //Split only first tab   
+  var p = msg.indexOf("\t", 0)
+  const chn = parseInt( msg.substr(0, p) );
   if(chn < 1 || ndxToElm.length < 1) return;
 
+  const val = msg.substr(p+1, msg.length - 1)
   const ndx = chn - 1;
-  const elm = ndxToElm[ ndx ];
-  const val = itm[1]     
+  const elm = ndxToElm[ ndx ];  
   
   if(!elm){
     console.log("Control no: " , ndx, " not found")
@@ -181,7 +182,8 @@ PROGMEM const char CONTROLASSIST_HTML_HEADER[] = R"=====(
 //Template for body of the html page
 PROGMEM const char CONTROLASSIST_HTML_BODY[] = R"=====(
 <body>
-<h1>Put your html code here</h1>
+<h1>No html page code defined!</h1>
+<h2>Define you html code here</h2>
 </body>
 )=====";
 //Template for footer of the html page
