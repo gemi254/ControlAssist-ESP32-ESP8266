@@ -1,3 +1,6 @@
+1.0.8 (2023-11-22)
+  * Load html code from spiffs or progmem.
+
 1.0.7 (2023-11-11)
   * Fixed errors, ESPVisualizer example added.
 
