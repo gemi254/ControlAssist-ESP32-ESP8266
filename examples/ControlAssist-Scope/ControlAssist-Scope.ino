@@ -1,18 +1,15 @@
+#define LOGGER_LOG_LEVEL 5            // Define log level for this module
+#include <ControlAssist.h>            // Control assist class
+
 #if defined(ESP32)
-  #include <WebServer.h>
   WebServer server(80);  
   #define ADC_PIN 36
   #include <ESPmDNS.h>  
 #else
-  #include <ESP8266WiFi.h>
-  #include <ESP8266WebServer.h>  
   ESP8266WebServer  server(80);
   #define ADC_PIN A0
   #include <ESP8266mDNS.h>
 #endif
-
-#define LOGGER_LOG_LEVEL 5
-#include <ControlAssist.h>            // Control assist class
 
 const char st_ssid[]="";              // Put connection SSID here. On empty an AP will be started
 const char st_pass[]="";              // Put your wifi passowrd.
@@ -21,13 +18,14 @@ bool isPlaying = false;
 unsigned long speed = 40;             // Read delay
 static int adc_pos = -1;
 
-ControlAssist ctrl;
+#include "scopePMem.h"                // Program html code
+ControlAssist ctrl;                   // Control assist class
 
-#include "scopePMem.h"
+// Web server handler
 void handleRoot(){
   ctrl.sendHtml(server);
 }
-// Change handler
+// Change handlers
 void changeOnOff(){
  LOG_V("changeOnOff  %li\n", ctrl["on-off"].toInt());
  isPlaying = ctrl["on-off"].toInt();
@@ -36,6 +34,8 @@ void speedChange(){
  LOG_V("speedChange  %s\n", ctrl["speed"].c_str());
  speed = ctrl["speed"].toInt();
 }
+
+// Setup function
 void setup() {
   Serial.begin(115200);
   Serial.print("\n\n\n\n");
