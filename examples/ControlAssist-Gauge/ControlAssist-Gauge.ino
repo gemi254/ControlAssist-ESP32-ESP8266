@@ -1,25 +1,22 @@
+#define LOGGER_LOG_LEVEL 5            // Define log level for this module
+#include <ControlAssist.h>            // Control assist class
+
 #if defined(ESP32)
-#ifdef __cplusplus
-extern "C" {
-#endif
-uint8_t temprature_sens_read();
-#ifdef __cplusplus
-}
-#endif
-uint8_t temprature_sens_read();
-  #include <WebServer.h>
+  #ifdef __cplusplus
+  extern "C" {
+  #endif
+  uint8_t temprature_sens_read();
+  #ifdef __cplusplus
+  }
+  #endif
+  uint8_t temprature_sens_read();  
   WebServer server(80);  
   #include <ESPmDNS.h>  
 #else
-  #include <ESP8266WiFi.h>
-  #include <ESP8266WebServer.h>  
   ESP8266WebServer  server(80);
   #include <ESP8266mDNS.h>
   ADC_MODE(ADC_VCC);
 #endif
-
-#define LOGGER_LOG_LEVEL 5
-#include <ControlAssist.h>           // Control assist class
 
 const char st_ssid[]="";             // Put connection SSID here. On empty an AP will be started
 const char st_pass[]="";             // Put your wifi passowrd.
@@ -30,7 +27,7 @@ static bool buttonState = false;
 #define DELAY_MS 1000               // Measurements delay
 ControlAssist ctrl;                 // Control assist class
 
-#include "gaugePMem.h"
+#include "gaugePMem.h"              // Program html code definitions
 
 // Change handler to handle web sockets changes
 void changeHandler(uint8_t ndx){
