@@ -28,13 +28,14 @@ ESP device will transmit **changes** to all connected **web socket** clients. Th
 </p>
 
 ## How to use
-Define yours internal page html code sections.
+Define yours internal page html code sections at Program mem.
 
 ```
 PROGMEM const char HTML_HEADERS[] = R"=====(<!DOCTYPE HTML>)=====";
 PROGMEM const char HTML_BODY[] = R"=====(<body></body>)=====";
 PROGMEM const char HTML_FOOTER[] = R"=====(</htmll>)=====";
 ```
+You can also upload page html code sections to spiffs as a html files
 
 ## ControlAssist init functions
 Define and initialize you class 
@@ -46,16 +47,28 @@ Define and initialize you class
   - `ControlAssist ctrl(port);        //Use port `
 
 + in your setup you must initialize control class by setting your webpage html code.
-  - `ctrl.setHtmlFooter(HTML_SCRIPT);`
   - `ctrl.setHtmlHeaders(HTML_HEADERS);`
   - `ctrl.setHtmlBody(HTML_BODY);`
+  - `ctrl.setHtmlFooter(HTML_SCRIPT);`
+
++ You can also use spiffs for the html code. Upload the files contained in the /data folder to your spiffs and define the file names.
+  - `#define HTML_HEADERS_FILENAME "/data/ESPVisualizer/ESP8266Wemos-VisH.html"`
+  - `#define HTML_BODY_FILENAME "/data/ESPVisualizer/ESP8266Wemos-VisB.html"`
+  - `#define HTML_SCRIPT_FILENAME "/data/ESPVisualizer/ESP8266Wemos-VisF.html"`
+
++ Set the files to be loaded when the page is requested.
+  - `ctrl.setHtmlHeadersFile(HTML_HEADERS_FILENAME);`
+  - `ctrl.setHtmlBodyFile(HTML_BODY_FILENAME);`
+  - `ctrl.setHtmlFooterFile(HTML_SCRIPT_FILENAME);`
+  
+     See example <a href="examples/ControlAssist-ESPVisualizer">ControlAssist-ESPVisualizer</a>
 
 + in your setup you must bind the html elements you want to control.
   - `ctrl.bind("html_id");` to link the html element
   - `ctrl.bind("html_id", start_value );` if you need to bind and init for sending on connection
   - `ctrl.bind("html_id", start_value, changeFunction);` if you need also to handle changes
   
-+ in your setup specify if you want ot auto send key initial values during web socket connection   
++ in your setup specify if you want ot auto send key initial values during web socket connection.
   - `ctrl.setAutoSendOnCon("html_id",true /* send: enable/disable */);`
   - `ctrl.put("html_id", value);  // Set a default value to be send`
 
