@@ -1,17 +1,15 @@
+#define LOGGER_LOG_LEVEL 5            // Define log level for this module
+#include <ControlAssist.h>            // Control assist class
+
 #if defined(ESP32)
-  #include <WebServer.h>
   WebServer server(80);
   #include <ESPmDNS.h>  
   #define ADC_PIN 36  
 #else
-  #include <ESP8266WebServer.h>  
-  ESP8266WebServer  server(80);
+  ESP8266WebServer server(80);
   #include <ESP8266mDNS.h>
   #define ADC_PIN A0
 #endif
-
-#define LOGGER_LOG_LEVEL 5
-#include <ControlAssist.h>            // Control assist class
 
 const char st_ssid[]="";              // Put connection SSID here. On empty an AP will be started
 const char st_pass[]="";              // Put your wifi passowrd.
@@ -122,7 +120,10 @@ void setup() {
   // Start web sockets
   ctrl.begin();
   LOG_V("ControlAssist started.\n");
-  
+   // Setup webserver  
+  server.on("/d", []() { // Dump controls    
+    ctrl.dump(&server);
+  });
   // Start webs server  
   server.begin();
   LOG_V("HTTP server started\n");
