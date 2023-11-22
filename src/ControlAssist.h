@@ -1,19 +1,44 @@
 #if !defined(_CONTROL_ASSIST_H)
 #define  _CONTROL_ASSIST_H
 
+#include <Arduino.h>
+#include <sstream>
+#include <vector>
+#if defined(ESP32)
+  #include <WebServer.h>
+  #include "SPIFFS.h"
+#else
+  #include <ESP8266WebServer.h>
+  #include <LittleFS.h>
+  #include "FS.h"
+#endif
 #include <WebSocketsServer.h>
 
-#define CT_CLASS_VERSION "1.0.7a"        // Class version
+#define CT_CLASS_VERSION "1.0.8"        // Class version
+#define STREAM_CHUNKSIZE 256            // Stream file buffer size
 
-// Define Platform libs
-#if defined(ESP32)
-  #define WEB_SERVER WebServer
-#else
-  #define WEB_SERVER ESP8266WebServer
+// Define Platform objects
+#ifndef WEB_SERVER
+  #if defined(ESP32)
+    #define WEB_SERVER WebServer
+  #else
+    #define WEB_SERVER ESP8266WebServer
+  #endif
+#endif 
+
+#ifndef STORAGE
+  #if defined(ESP32)
+    #include "SPIFFS.h"
+    #define STORAGE SPIFFS    // Storage SPIFFS
+  #else
+    #include <LittleFS.h>
+    #define STORAGE LittleFS  // Storage LittleFS
+  #endif
 #endif
 
 #include "espLogger.h"
 
+// Web socket events
 typedef std::function<void(uint8_t ndx)> WebSocketServerEventG;
 typedef std::function<void(void)> WebSocketServerEvent;
 
@@ -23,6 +48,12 @@ struct ctrlPairs {
     String val;
     WebSocketServerEvent ev;
     bool autoSendOnCon;
+};
+
+// Positions of keys inside array
+struct keysNdx {
+    String key;
+    size_t ndx;
 };
 
 class ControlAssist{ 
@@ -56,6 +87,10 @@ class ControlAssist{
     void setHtmlHeaders(const char *html_headers) { _html_headers = html_headers; }
     void setHtmlBody(const char *html_body) { _html_body = html_body; }    
     void setHtmlFooter(const char *html_footer) { _html_footer = html_footer; }    
+    // Set html page code from file
+    void setHtmlHeadersFile(const char *fileName) { _html_headers_file = fileName; }
+    void setHtmlBodyFile(const char *fileName) { _html_body_file = fileName; }    
+    void setHtmlFooterFile(const char *fileName) { _html_footer_file = fileName; }    
     // Stop web sockets
     void close();
   public:    
@@ -82,7 +117,7 @@ class ControlAssist{
     // Put val (string) to Key. forcesend to false to send changes only, forceAdd to add it if not exists
     bool put(String key, String val, bool forceSend = false, bool forceAdd = false);
     // Display config items
-    void dump();
+    void dump(WEB_SERVER *server = NULL);
   public:
     // Sort vectors by key (name in confPairs)
     void sort();
@@ -101,6 +136,10 @@ class ControlAssist{
     // Set the auto send on ws connection flag on all keys
     void setAutoSendOnCon(bool send);
   private:
+    // Send a file from spiffs to client
+    void streamFile(WEB_SERVER &server, const char *htmlFile);
+    // Load a file into text
+    bool loadText(String fPath, String &txt);
     // Start websockets
     void startWebSockets();
     // Stop websockets
@@ -111,10 +150,14 @@ class ControlAssist{
     void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
   private:
     std::vector<ctrlPairs> _ctrls;
+    std::vector<keysNdx> _keysNdx;
     uint8_t _clientsNum;
     const char* _html_headers;
     const char* _html_body;
     const char* _html_footer;
+    const char* _html_headers_file;
+    const char* _html_body_file;
+    const char* _html_footer_file;
     uint16_t _port;
     bool _wsEnabled;
     WEB_SERVER *_server;
