@@ -10,11 +10,14 @@
 #else
   #include <ESP8266WebServer.h>
   #include <LittleFS.h>
-  #include "FS.h"
 #endif
 #include <WebSocketsServer.h>
 
-#define CT_CLASS_VERSION "1.0.8"        // Class version
+#ifndef LOGGER_LOG_LEVEL
+  #define LOGGER_LOG_LEVEL 4     // Set log level for this module
+#endif
+
+#define CT_CLASS_VERSION "1.0.9"        // Class version
 #define STREAM_CHUNKSIZE 256            // Stream file buffer size
 
 // Define Platform objects
@@ -51,7 +54,7 @@ struct ctrlPairs {
 };
 
 // Positions of keys inside array
-struct keysNdx {
+struct ctrlsNdx {
     String key;
     size_t ndx;
 };
@@ -150,7 +153,7 @@ class ControlAssist{
     void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
   private:
     std::vector<ctrlPairs> _ctrls;
-    std::vector<keysNdx> _keysNdx;
+    std::vector<ctrlsNdx> _keysNdx;
     uint8_t _clientsNum;
     const char* _html_headers;
     const char* _html_body;
