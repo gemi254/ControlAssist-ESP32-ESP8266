@@ -1,4 +1,3 @@
-#define LOGGER_LOG_LEVEL 4     // Set log level for this module
 #include "ControlAssist.h"     // Control assist class
 #include "controlAssistPMem.h" // Memory static valiables (html pages)
 
@@ -181,11 +180,11 @@ int ControlAssist::getKeyNdx(String key) {
   if (_keysNdx.empty() || key == "") return -1; 
   //LOG_I("getKeyNdx, key: %s\n",key.c_str()); 
   auto lower = std::lower_bound(_keysNdx.begin(), _keysNdx.end(), key, [](
-    const keysNdx &a, const String &b) { 
+    const ctrlsNdx &a, const String &b) { 
     return a.key < b;}
   );
   int keyNdx = std::distance(_keysNdx.begin(), lower); 
-  if (key == _ctrls[ _keysNdx[keyNdx].ndx ].key) return _keysNdx[keyNdx].ndx;
+  if (_keysNdx[keyNdx].ndx < _ctrls.size() && key == _ctrls[ _keysNdx[keyNdx].ndx ].key) return _keysNdx[keyNdx].ndx;
   else LOG_V("Key %s not exist\n", key.c_str()); 
   return -1; // not found
 }
@@ -205,7 +204,7 @@ bool ControlAssist::getNextPair(ctrlPairs &c) {
 // Sort vectors by key (name in logKeysNdx)
 void ControlAssist::sort(){
   std::sort(_keysNdx.begin(), _keysNdx.end(), [] (
-    const keysNdx &a, const keysNdx &b) {
+    const ctrlsNdx &a, const ctrlsNdx &b) {
     return a.key < b.key;}
   );
 }
