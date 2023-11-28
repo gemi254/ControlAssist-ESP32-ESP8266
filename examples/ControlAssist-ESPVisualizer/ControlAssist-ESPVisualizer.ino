@@ -3,13 +3,13 @@
   WebServer server(80);  
   #include <ESPmDNS.h>  
   #include "gpioPMemESP32.h"
-  #define BODY_FILE_NAME "/data/ESPWroom32-Vis.html"
+  #define BODY_FILE_NAME "/src/ESPWroom32-Vis.html"
   #define TOTAL_PINS 40
 #else
   #include <ESP8266mDNS.h>
   #include <ESP8266WebServer.h>
   ESP8266WebServer  server(80);
-  #define BODY_FILE_NAME "/data/ESP8266Wemos-Vis.html"  
+  #define BODY_FILE_NAME "/src/ESP8266Wemos-Vis.html"  
   //#include "gpioPMemESP8266.h"
   #define TOTAL_PINS 17
 #endif
