@@ -52,9 +52,9 @@ Define and initialize you class
   - `ctrl.setHtmlFooter(HTML_SCRIPT);`
 
 + You can also use spiffs for the html code. Upload the files contained in the /data folder to your spiffs and define the file names.
-  - `#define HTML_HEADERS_FILENAME "/data/ESPVisualizer/ESP8266Wemos-VisH.html"`
-  - `#define HTML_BODY_FILENAME "/data/ESPVisualizer/ESP8266Wemos-VisB.html"`
-  - `#define HTML_SCRIPT_FILENAME "/data/ESPVisualizer/ESP8266Wemos-VisF.html"`
+  - `#define HTML_HEADERS_FILENAME "/src/ESPVisualizer/ESP8266Wemos-VisH.html"`
+  - `#define HTML_BODY_FILENAME "/src/ESPVisualizer/ESP8266Wemos-VisB.html"`
+  - `#define HTML_SCRIPT_FILENAME "/src/ESPVisualizer/ESP8266Wemos-VisF.html"`
 
 + Set the files to be loaded when the page is requested.
   - `ctrl.setHtmlHeadersFile(HTML_HEADERS_FILENAME);`
