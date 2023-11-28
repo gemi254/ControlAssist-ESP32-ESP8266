@@ -1,3 +1,6 @@
+1.0.9 (2023-11-28)
+  * Added Joystick example.
+
 1.0.8 (2023-11-22)
   * Load html code from spiffs or progmem.
 
