@@ -34,6 +34,8 @@
 #elif LOGGER_LOG_MODE == LOGGER_LOG_MODE_EXTERNAL
     #ifndef _log_printf
     #endif 
+#else 
+    #define _DEBUG_PORT Serial    
 #endif
 
 #if LOGGER_LOG_MODE != LOGGER_LOG_MODE_EXTERNAL
