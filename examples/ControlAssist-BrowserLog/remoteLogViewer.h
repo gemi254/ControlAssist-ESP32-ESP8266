@@ -2,7 +2,7 @@
 #if !defined(_REMOTE_LOG_VIEWER_H)
 #define  _REMOTE_LOG_VIEWER_H 
 
-PROGMEM const char RMTDBG_HTML_BODY[] = R"=====(
+PROGMEM const char LOGGER_VIEWER_HTML_BODY[] = R"=====(
 <style>
 :root { 
   --errColor: red;
@@ -22,7 +22,7 @@ body{
 </body>
 )=====";
 
-PROGMEM const char RMTDBG_HTML_SCRIPT[] = R"=====(
+PROGMEM const char LOGGER_VIEWER_HTML_SCRIPT[] = R"=====(
 <script>
 const logLine = document.getElementById("logLine"),
 logText = document.getElementById("logText")
@@ -96,8 +96,8 @@ class RemoteLogViewer: public ControlAssist{
       // Store this instance pointer to global
       pLogView = this; 
       // Setup control assist
-      ControlAssist::setHtmlBody(RMTDBG_HTML_BODY);
-      ControlAssist::setHtmlFooter(RMTDBG_HTML_SCRIPT);
+      ControlAssist::setHtmlBody(LOGGER_VIEWER_HTML_BODY);
+      ControlAssist::setHtmlFooter(LOGGER_VIEWER_HTML_SCRIPT);
       ControlAssist::setup(server, uri);
       ControlAssist::bind("logLine");      
     }  
