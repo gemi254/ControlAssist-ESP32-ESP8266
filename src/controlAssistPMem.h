@@ -8,8 +8,11 @@ var ndxToElm = []
 function updateKeys(event){
   if(event.type=="wsChange") return;
   const e = event.target;
-  
-  const value = e.value.trim();
+  var value = ""
+  if(e.nodeType == 1)
+    value = e.innerHTML;
+  else
+    value = e.value.trim();
   const et = event.target.type;
   
   if (e.type === 'checkbox'){ 
@@ -17,8 +20,8 @@ function updateKeys(event){
   }else {
       updateKey(e.id, value);
   }
-
 }
+
 function updateKey(key, value) {          
   if(value == null ) return;  
   sendWsTxt(keysToNdx[key] + 1 + "\t" + value);
