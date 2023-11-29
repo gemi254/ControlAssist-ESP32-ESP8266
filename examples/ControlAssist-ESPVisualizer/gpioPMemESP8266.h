@@ -44,7 +44,7 @@ PROGMEM const char HTML_PAGE[] = R"=====(
     border-radius: 50%;
     position: relative;
     margin: 4px;
-    #border: 1px solid gray;
+    cursor: pointer;
 }
 .on {
     background-color: #ff000096;
@@ -57,6 +57,7 @@ PROGMEM const char HTML_PAGE[] = R"=====(
     height: 5px;
     background-color: lightGray;    
     border-radius: 10%;
+    cursor: pointer;
 }
 #led.on {
 	background-color: blue;
