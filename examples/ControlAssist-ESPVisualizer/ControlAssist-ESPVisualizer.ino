@@ -1,16 +1,26 @@
+// Setting to true will need to upload contents of /data 
+// directory to esp SPIFFS using image upload
+#define USE_SPIFFS_FOR_PAGES false
+
 #if defined(ESP32)
   #include <WebServer.h>
   WebServer server(80);  
   #include <ESPmDNS.h>  
-  #include "gpioPMemESP32.h"
-  #define BODY_FILE_NAME "/src/ESPWroom32-Vis.html"
+  #if USE_SPIFFS_FOR_PAGES
+    #define BODY_FILE_NAME "/src/ESPWroom32-Vis.html"
+  #else
+    #include "gpioPMemESP32.h"
+  #endif
   #define TOTAL_PINS 40
 #else
   #include <ESP8266mDNS.h>
   #include <ESP8266WebServer.h>
   ESP8266WebServer  server(80);
-  #define BODY_FILE_NAME "/src/ESP8266Wemos-Vis.html"  
-  //#include "gpioPMemESP8266.h"
+  #if USE_SPIFFS_FOR_PAGES
+    #include "gpioPMemESP8266.h"
+  #else      
+    #define BODY_FILE_NAME "/src/ESP8266Wemos-Vis.html"  
+  #endif
   #define TOTAL_PINS 17
 #endif
 
@@ -25,7 +35,7 @@ const char st_pass[]="";                    // Put your wifi passowrd.
 unsigned long pingMillis = millis();        // Ping millis
 
 #ifndef LED_BUILTIN
-#define LED_BUILTIN 22                      // Define the pin tha the led is connected
+  #define LED_BUILTIN 22                      // Define the pin tha the led is connected
 #endif
 
 // Toggle led on/off and send pin update
@@ -140,7 +150,11 @@ void setup() {
   // Setup control assist
   ctrl.setup(server, "/");
   // Use default CONTROLASSIST_HTML_HEADER and CONTROLASSIST_HTML_FOOTER
-  ctrl.setHtmlBodyFile(BODY_FILE_NAME);
+  #if USE_SPIFFS_FOR_PAGES
+    ctrl.setHtmlBodyFile(BODY_FILE_NAME);
+  #else
+    ctrl.setHtmlBody(HTML_PAGE);
+  #endif 
   // Bind led
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH); // Turn LED OFF
