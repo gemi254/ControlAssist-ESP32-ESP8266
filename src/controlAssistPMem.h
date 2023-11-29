@@ -9,10 +9,11 @@ function updateKeys(event){
   if(event.type=="wsChange") return;
   const e = event.target;
   var value = ""
-  if(e.nodeType == 1)
-    value = e.innerHTML;
-  else
+  if(typeof(e.value) != 'undefined')
     value = e.value.trim();
+  else if(typeof(e.innerHTML) != 'undefined')
+    value = e.innerHTML;
+  
   const et = event.target.type;
   
   if (e.type === 'checkbox'){ 
