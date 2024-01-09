@@ -62,7 +62,12 @@ html, body {
   font-size: 1.2rem;
   padding: 10px;
 }
-
+.bottom {
+    position: absolute;
+    bottom: 5px;
+    width: 100%;
+    text-align: center;
+}
 </style>
 <body>
 <div class="container">
@@ -82,11 +87,14 @@ html, body {
 <div class="container">
     <div id="led"></div>
 </div>
-
+<div class="bottom">
+  <h6 id="wsStatus" style="color: lightgray;"></h6>
+</div> 
 <script>
 const led = document.getElementById("led"),
       lampLevel = document.getElementById("lampLevel"),
-      lampLevelValue = document.getElementById("lampLevelValue")
+      lampLevelValue = document.getElementById("lampLevelValue"),
+      wStatus = document.getElementById("wsStatus")
    
 const fadeLed = (val) => {
   lampLevelValue.innerHTML = val;
@@ -104,6 +112,16 @@ lampLevel.addEventListener("input", (event) => {
 lampLevel.addEventListener("wsChange", (event) => {
     fadeLed(event.target.value)
 });
+
+wStatus.addEventListener("change", (event) => {
+  if(event.target.innerHTML == "Connected")
+    event.target.style.color = "lightgreen"
+  else if(event.target.innerHTML.startsWith("Error:"))
+    event.target.style.color = "lightred"
+  else 
+    event.target.style.color = "lightgray"
+});
+
 </script>
 </body>
 </html>

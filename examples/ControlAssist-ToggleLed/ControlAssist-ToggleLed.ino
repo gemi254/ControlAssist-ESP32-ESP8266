@@ -96,6 +96,13 @@ input:focus + .slider {
 input:checked + .slider:before {
   transform: translateX(calc(var(--elmSize) * 0.9));
 }
+
+.bottom {
+    position: absolute;
+    bottom: 5px;
+    width: 100%;
+    text-align: center;
+}
 </style>
 <body>
     <div class="container">
@@ -111,9 +118,14 @@ input:checked + .slider:before {
     </div>
     <div id="led"></div>
 </div>
+<br>
+<div class="bottom">
+  <h6 id="wsStatus" style="color: lightgray;"></h6>
+</div> 
 <script>
 const led = document.getElementById("led"),
-      toggleLed = document.getElementById("toggleLed")
+      toggleLed = document.getElementById("toggleLed"),
+      wStatus = document.getElementById("wsStatus")
 
 const changeLed = (v) => {
   if(!v) led.classList.remove("on");
@@ -126,7 +138,16 @@ toggleLed.addEventListener("change", (event) => {
 toggleLed.addEventListener("wsChange", (event) => {
   changeLed(event.target.checked);
 });
- 
+
+wStatus.addEventListener("change", (event) => {
+  if(event.target.innerHTML == "Connected")
+    event.target.style.color = "lightgreen"
+  else if(event.target.innerHTML.startsWith("Error:"))
+    event.target.style.color = "lightred"
+  else 
+    event.target.style.color = "lightgray"    
+
+});
 </script>
 </body>
 )=====";
