@@ -1,7 +1,7 @@
 #if !defined(_CONTROL_ASSIST_H)
 #define  _CONTROL_ASSIST_H
 
-#include <Arduino.h>
+//#include <Arduino.h>
 #include <sstream>
 #include <vector>
 #if defined(ESP32)
@@ -17,7 +17,7 @@
   #define LOGGER_LOG_LEVEL 4     // Set log level for this module
 #endif
 
-#define CT_CLASS_VERSION "1.0.9"        // Class version
+#define CT_CLASS_VERSION "1.1.0"        // Class version
 #define STREAM_CHUNKSIZE 256            // Stream file buffer size
 
 // Define Platform objects
