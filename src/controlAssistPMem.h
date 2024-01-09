@@ -67,15 +67,25 @@ const dbg = true;
 let ws = null;
 let hbTimer = null;
 let refreshInterval = 15000;
+let wsStatus = null;
 
 // close web socket on leaving page
 window.addEventListener('beforeunload', function (event) {
   if (ws) closeWS();
 }); 
 
+function setStatus(msg){
+  if(!wsStatus) return;
+  wsStatus.innerHTML = msg
+  if(dbg) console.log(msg)
+  var event = new Event('change');  
+  wsStatus.dispatchEvent(event);
+}
+
 // Websocket handling
-function initWebSocket() {  
-  console.log("Connect to: " + wsServer);
+function initWebSocket() {
+  wsStatus = document.getElementById("wsStatus")    
+  setStatus("Connecting to: " + wsServer);
   ws = new WebSocket(wsServer);
   ws.onopen = onWsOpen;
   ws.onclose = onWsClose;
@@ -83,6 +93,7 @@ function initWebSocket() {
   ws.onerror = onWsError;
 }
 async function closeWS() {
+  setStatus("Disconnected")
   ws.send('0\tC');
   await sleep(500);
   ws.close();
@@ -104,7 +115,7 @@ function wsHeartBeat() {
 }
 // Connected
 function onWsOpen(event) {
-  if(dbg) console.log("onWsOpen");
+  setStatus("Connected")
   wsHeartBeat();
 }
 // Handle websocket messages
@@ -146,11 +157,11 @@ function onWsMessage(messageEvent) {
   }
 }
 function onWsError(event) {
-  console.log("WS Error: " + event.code);
+  setStatus("Error: " + event.code)
 }
 
 function onWsClose(event) {
-  console.log("Discon: " + event.code + ' - ' + event.reason);
+  setStatus("Disconnect: " + event.code + ' - ' + event.reason);
   ws = null;
   // event.codes:
   //   1006 if server not available, or another web page is already open
