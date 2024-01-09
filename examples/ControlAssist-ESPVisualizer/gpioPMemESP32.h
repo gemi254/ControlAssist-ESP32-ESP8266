@@ -129,9 +129,11 @@ PROGMEM const char HTML_PAGE[] = R"=====(
 </div>
 </div>
 <h5 style="text-align: center;">GPIO pins marked with <font color="red">red</font> are in active state. Click on each pin to toggle it low / hi</h5>
+<h6 id="wsStatus" style="text-align: center; color: lightgray;"></h6>
 <script>
 // Led setup
-const led = document.getElementById("led")
+const led = document.getElementById("led"),
+  wStatus = document.getElementById("wsStatus")
 
 led.addEventListener("wsChange", (event) => {
     val = event.target.innerHTML;
@@ -151,6 +153,14 @@ led.addEventListener("click", (event) => {
     }        
 });
 
+wStatus.addEventListener("change", (event) => {
+  if(event.target.innerHTML == "Connected")
+    event.target.style.color = "lightgreen"
+  else if(event.target.innerHTML.startsWith("Error:"))
+    event.target.style.color = "lightred"
+  else 
+    event.target.style.color = "lightgray"
+});
 // Setup gpio pins
 var pins = [];    
 for(i=0; i<40; ++i){
