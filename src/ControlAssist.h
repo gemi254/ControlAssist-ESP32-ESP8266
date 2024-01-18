@@ -5,8 +5,7 @@
 #include <sstream>
 #include <vector>
 #if defined(ESP32)
-  #include <WebServer.h>
-  #include "SPIFFS.h"
+  #include <WebServer.h>  
 #else
   #include <ESP8266WebServer.h>
   #include <LittleFS.h>
