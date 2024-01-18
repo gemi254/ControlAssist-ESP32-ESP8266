@@ -63,7 +63,7 @@ if(port)
   wsServer = "ws://" + document.location.host + ":" + port + "/";
 else
   wsServer = "ws://" + document.location.host + ":81/";
-const dbg = true;
+const dbg = false;
 let ws = null;
 let hbTimer = null;
 let refreshInterval = 15000;
