@@ -419,8 +419,9 @@ void ControlAssist::streamFile(WEB_SERVER &server, const char *htmlFile){
   byte chunk[STREAM_CHUNKSIZE];
   size_t chunksize;
   do {
-      chunksize = f.read(chunk, STREAM_CHUNKSIZE); 
-      server.sendContent((char *)chunk, chunksize);
+      chunksize = f.read(chunk, STREAM_CHUNKSIZE);
+      if(chunksize > 0) 
+        server.sendContent((char *)chunk, chunksize);
   } while (chunksize != 0);
   f.close(); 
 }
@@ -428,6 +429,7 @@ void ControlAssist::streamFile(WEB_SERVER &server, const char *htmlFile){
 // Render html to client
 void ControlAssist::sendHtml(WEB_SERVER &server){
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server.send(200, "text/html", "");
   if(_html_headers_file){
     streamFile(server, _html_headers_file);
   }else{
@@ -455,4 +457,5 @@ void ControlAssist::sendHtml(WEB_SERVER &server){
   }else{
     server.sendContent(_html_footer, strlen(_html_footer));
   }
+  server.sendContent(F("")); // this tells web client that transfer is done
 }
