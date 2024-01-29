@@ -72,6 +72,9 @@ let wsStatus = null;
 // close web socket on leaving page
 window.addEventListener('beforeunload', function (event) {
   if (ws) closeWS();
+  const delay = 500;
+  var start = new Date().getTime();
+  while (new Date().getTime() < start + delay);
 }); 
 
 function setStatus(msg){
@@ -92,10 +95,13 @@ function initWebSocket() {
   ws.onmessage = onWsMessage; 
   ws.onerror = onWsError;
 }
+
 async function closeWS() {
   setStatus("Disconnected")
   ws.send('0\tC');
-  await sleep(500);
+  const delay = 500;
+  var start = new Date().getTime();
+  while (new Date().getTime() < start + delay);
   ws.close();
 }
 function sendWsTxt(reqStr) {
