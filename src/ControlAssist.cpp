@@ -58,6 +58,7 @@ void ControlAssist::stopWebSockets(){
   _socket->close();
   delete _socket;
   _socket = NULL;
+  _clientsNum = 0;
   LOG_I("Stoped web sockets at port: %u\n", _port);
 }
 
@@ -290,7 +291,7 @@ void ControlAssist::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload
           break;
       case WStype_DISCONNECTED:
           LOG_E("Client no: %02u Disconnected!\n", num);
-          _clientsNum--;
+          if(_clientsNum>0) _clientsNum--;
           break;
       case WStype_CONNECTED:
           {
@@ -324,7 +325,7 @@ void ControlAssist::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload
             if(ndx == 0 ){ //System message
               if(val == "C"){ // Close connection message
                 LOG_W("Received close connection msg. \n");
-                //_socket->disconnect();
+                _socket->disconnect();
               }else{
                 LOG_V("Sys msg: %s \n",val.c_str());
               }
