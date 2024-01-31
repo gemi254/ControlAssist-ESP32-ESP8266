@@ -118,7 +118,7 @@ PROGMEM const char HTML_PAGE[] = R"=====(
 </div>
 </div>
 <h5 style="text-align: center;">GPIO pins marked with <font color="red">red</font> are in active state. Click on each pin to toggle it low / hi</h5>
-<h6 id="wsStatus" style="color: lightgray;"></h6>
+<h6 id="wsStatus" style="text-align: center; color: lightgray;"></h6>
 <script>
 // Led setup
 const led = document.getElementById("led"),
