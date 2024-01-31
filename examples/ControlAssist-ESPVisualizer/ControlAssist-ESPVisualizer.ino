@@ -6,7 +6,7 @@
   #include <WebServer.h>
   WebServer server(80);  
   #include <ESPmDNS.h>  
-  #if USE_SPIFFS_FOR_PAGES
+  #if not USE_SPIFFS_FOR_PAGES
     #define BODY_FILE_NAME "/src/ESPWroom32-Vis.html"
   #else
     #include "gpioPMemESP32.h"
@@ -16,7 +16,7 @@
   #include <ESP8266mDNS.h>
   #include <ESP8266WebServer.h>
   ESP8266WebServer  server(80);
-  #if USE_SPIFFS_FOR_PAGES
+  #if not USE_SPIFFS_FOR_PAGES
     #include "gpioPMemESP8266.h"
   #else      
     #define BODY_FILE_NAME "/src/ESP8266Wemos-Vis.html"  
