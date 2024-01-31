@@ -52,6 +52,17 @@ html, body {
   border-radius: calc(var(--elmSize) * 1.3);
 }
 
+#conLed {
+  margin-left: 20px;
+  width: calc(var(--elmSize) * 0.4);
+  height: calc(var(--elmSize) * 0.4);
+  background-color: lightGray;
+  border-radius: calc(var(--elmSize) * 0.4);
+  position: relative;
+  margin-left: 50%;
+  margin-bottom: 1em;
+}
+
 .slider {
   position: relative;
   display: inline-block;
@@ -88,13 +99,15 @@ html, body {
     <div id="led"></div>
 </div>
 <div class="bottom">
-  <h6 id="wsStatus" style="color: lightgray;"></h6>
+  <div id="conLed" class="center"></div>
+  <span id="wsStatus" style="display: none;"></span>  
 </div> 
 <script>
 const led = document.getElementById("led"),
       lampLevel = document.getElementById("lampLevel"),
       lampLevelValue = document.getElementById("lampLevelValue"),
-      wStatus = document.getElementById("wsStatus")
+      wStatus = document.getElementById("wsStatus"),
+      conLed = document.getElementById("conLed")
    
 const fadeLed = (val) => {
   lampLevelValue.innerHTML = val;
@@ -114,12 +127,14 @@ lampLevel.addEventListener("wsChange", (event) => {
 });
 
 wStatus.addEventListener("change", (event) => {
-  if(event.target.innerHTML == "Connected")
-    event.target.style.color = "lightgreen"
-  else if(event.target.innerHTML.startsWith("Error:"))
-    event.target.style.color = "lightred"
-  else 
-    event.target.style.color = "lightgray"
+  if(event.target.innerHTML == "Connected"){
+    conLed.style.backgroundColor  = "lightgreen"
+  }else if(event.target.innerHTML.startsWith("Error:")){
+    conLed.style.backgroundColor  = "lightred"    
+  }else{
+    conLed.style.backgroundColor  = "lightgray"  
+  }
+  conLed.title = event.target.innerHTML
 });
 
 </script>
