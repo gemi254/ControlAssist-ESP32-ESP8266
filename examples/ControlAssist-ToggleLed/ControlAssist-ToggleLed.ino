@@ -48,6 +48,17 @@ html, body {
 #led.on {
 	background-color: blue;
 }
+
+#conLed {
+  margin-left: 20px;
+  width: calc(var(--elmSize) * 0.4);
+  height: calc(var(--elmSize) * 0.4);
+  background-color: lightGray;
+  border-radius: calc(var(--elmSize) * 0.4);
+  position: relative;
+  margin-left: 50%;
+}
+
 .switch {
   position: relative;
   display: inline-block;
@@ -120,17 +131,20 @@ input:checked + .slider:before {
 </div>
 <br>
 <div class="bottom">
-  <h6 id="wsStatus" style="color: lightgray;"></h6>
+  <div id="conLed" class="center"></div>
+  <span id="wsStatus" style="display: none;"></span>
 </div> 
 <script>
 const led = document.getElementById("led"),
       toggleLed = document.getElementById("toggleLed"),
-      wStatus = document.getElementById("wsStatus")
+      wStatus = document.getElementById("wsStatus"),
+      conLed = document.getElementById("conLed")
 
 const changeLed = (v) => {
   if(!v) led.classList.remove("on");
   else led.classList.add("on");    
-} 
+}
+
 toggleLed.addEventListener("change", (event) => {
   changeLed(event.target.checked);
 });
@@ -140,13 +154,17 @@ toggleLed.addEventListener("wsChange", (event) => {
 });
 
 wStatus.addEventListener("change", (event) => {
-  if(event.target.innerHTML == "Connected")
+  if(event.target.innerHTML == "Connected"){
     event.target.style.color = "lightgreen"
-  else if(event.target.innerHTML.startsWith("Error:"))
+    conLed.style.backgroundColor  = "lightgreen"
+  }else if(event.target.innerHTML.startsWith("Error:")){
     event.target.style.color = "lightred"
-  else 
-    event.target.style.color = "lightgray"    
-
+    conLed.style.backgroundColor  = "lightred"    
+  }else{
+    event.target.style.color = "lightgray"
+    conLed.style.backgroundColor  = "lightgray"  
+  }
+  conLed.title = event.target.innerHTML
 });
 </script>
 </body>
