@@ -13,18 +13,18 @@ function updateKeys(event){
     value = e.value.trim();
   else if(typeof(e.innerHTML) != 'undefined')
     value = e.innerHTML;
-  
+
   const et = event.target.type;
-  
-  if (e.type === 'checkbox'){ 
+
+  if (e.type === 'checkbox'){
       updateKey(e.id, e.checked ? 1 : 0);
   }else {
       updateKey(e.id, value);
   }
 }
 
-function updateKey(key, value) {          
-  if(value == null ) return;  
+function updateKey(key, value) {
+  if(value == null ) return;
   sendWsTxt(keysToNdx[key] + 1 + "\t" + value);
 }
 
@@ -34,18 +34,18 @@ function wsUpdatedKeys(event){
 
 function initWebSocketCtrls(){
   for(var i in ndxTokeys ) {
-    const key = ndxTokeys[i];    
+    const key = ndxTokeys[i];
     const elm = document.getElementById(key);
     if(elm){
-      if(elm.type === "button"){  //|| elm.type === "submit"){        
-        elm.addEventListener("click", updateKeys);     
-      }else if(elm.type === "checkbox"){        
+      if(elm.type === "button"){  //|| elm.type === "submit"){
+        elm.addEventListener("click", updateKeys);
+      }else if(elm.type === "checkbox"){
         elm.addEventListener("change", updateKeys);
       }else{
         elm.addEventListener("change", updateKeys);
         elm.addEventListener("input", function (event) {
           updateKeys(event)
-        });        
+        });
       }
       // Websocket events
       elm.addEventListener("wsChange", wsUpdatedKeys);
@@ -68,6 +68,7 @@ let ws = null;
 let hbTimer = null;
 let refreshInterval = 15000;
 let wsStatus = null;
+let conLed = null;
 
 // close web socket on leaving page
 window.addEventListener('beforeunload', function (event) {
@@ -75,24 +76,25 @@ window.addEventListener('beforeunload', function (event) {
   const delay = 500;
   var start = new Date().getTime();
   while (new Date().getTime() < start + delay);
-}); 
+});
 
 function setStatus(msg){
   if(!wsStatus) return;
   wsStatus.innerHTML = msg
   if(dbg) console.log(msg)
-  var event = new Event('change');  
+  var event = new Event('change');
   wsStatus.dispatchEvent(event);
 }
 
 // Websocket handling
 function initWebSocket() {
-  wsStatus = document.getElementById("wsStatus")    
+  wsStatus = document.getElementById("wsStatus")
+  conLed = document.getElementById("conLed")
   setStatus("Connecting to: " + wsServer);
   ws = new WebSocket(wsServer);
   ws.onopen = onWsOpen;
   ws.onclose = onWsClose;
-  ws.onmessage = onWsMessage; 
+  ws.onmessage = onWsMessage;
   ws.onerror = onWsError;
 }
 
@@ -112,7 +114,7 @@ function resetHbTimer(){
   clearTimeout(hbTimer);
   hbTimer = setTimeout(wsHeartBeat, refreshInterval);
 }
-// Check that connection is still up 
+// Check that connection is still up
 function wsHeartBeat() {
   if (!ws) return;
   if (ws.readyState !== 1) return;
@@ -126,19 +128,19 @@ function onWsOpen(event) {
 }
 // Handle websocket messages
 function handleWsMessage(msg){
-  //Split only first tab   
+  //Split only first tab
   var p = msg.indexOf("\t", 0)
   const chn = parseInt( msg.substr(0, p) );
   if(chn < 1 || ndxToElm.length < 1) return;
 
   const val = msg.substr(p+1, msg.length - 1)
   const ndx = chn - 1;
-  const elm = ndxToElm[ ndx ];  
-  
+  const elm = ndxToElm[ ndx ];
+
   if(!elm){
     console.log("Control no: " , ndx, " not found")
     return;
-  } 
+  }
   if(elm.type === undefined){
     elm.innerHTML = val;
   }else if (elm.type === 'checkbox'){
@@ -146,7 +148,7 @@ function handleWsMessage(msg){
   }else{
     elm.value = val;
   }
-  var event = new Event('wsChange');  
+  var event = new Event('wsChange');
   elm.dispatchEvent(event);
 }
 
@@ -172,8 +174,8 @@ function onWsClose(event) {
   // event.codes:
   //   1006 if server not available, or another web page is already open
   //   1005 if closed from app
-  if (event.code == 1006) { 
-    console.log("Closed websocket as a newer connection was made"); 
+  if (event.code == 1006) {
+    console.log("Closed websocket as a newer connection was made");
     initWebSocket();
   }else if (event.code != 1005) initWebSocket(); // retry if any other reason
 }
@@ -185,7 +187,7 @@ PROGMEM const char CONTROLASSIST_SCRIPT_INIT_CONTROLS[] = R"=====(
 document.addEventListener('DOMContentLoaded', function (event) {
   initWebSocket();
   initWebSocketCtrls();
-  
+
   /*{SUB_SCRIPT}*/
 })
 )=====";
@@ -197,7 +199,7 @@ PROGMEM const char CONTROLASSIST_HTML_HEADER[] = R"=====(
   <meta charset="utf-8">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"/>
-  <title>Control Assist</title>                        
+  <title>Control Assist</title>
 </head>
 )=====";
 //Template for body of the html page
