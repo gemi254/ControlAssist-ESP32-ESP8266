@@ -273,7 +273,7 @@ int ControlAssist::bind(const char* key, const char* val, WebSocketServerEvent e
     return -1;
   }  
   ctrlPairs ctrl = { key, val, ev, false };
-  LOG_I("Binding key: '%s', val:  %s, chn: %02i\n", key, val, _ctrls.size() + 1); 
+  LOG_D("Binding key: '%s', val:  %s, chn: %02i\n", key, val, _ctrls.size() + 1); 
   add(ctrl);
   return getKeyNdx(key);
 }
@@ -318,7 +318,7 @@ void ControlAssist::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload
             if(i < length) pload += i + 1;
             
             uint8_t ndx = (uint8_t)atoi(chn);
-            std::string val = reinterpret_cast<char *>(pload);
+            String val = reinterpret_cast<char *>(pload);
 
             LOG_N("Msg ndx: %u, val: %s\n", ndx, val.c_str());
 
