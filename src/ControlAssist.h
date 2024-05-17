@@ -14,7 +14,7 @@
   #define LOGGER_LOG_LEVEL 4     // Set log level for this module
 #endif
 
-#define CT_CLASS_VERSION "1.1.1"        // Class version
+#define CT_CLASS_VERSION "1.1.2"        // Class version
 #define STREAM_CHUNKSIZE 256            // Stream file buffer size
 
 // Define Platform objects
