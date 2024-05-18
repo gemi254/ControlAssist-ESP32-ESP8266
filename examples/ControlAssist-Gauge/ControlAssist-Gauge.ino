@@ -9,9 +9,9 @@
   #ifdef __cplusplus
   }
   #endif
-  uint8_t temprature_sens_read();  
-  WebServer server(80);  
-  #include <ESPmDNS.h>  
+  uint8_t temprature_sens_read();
+  WebServer server(80);
+  #include <ESPmDNS.h>
 #else
   ESP8266WebServer  server(80);
   #include <ESP8266mDNS.h>
@@ -32,7 +32,7 @@ ControlAssist ctrl;                 // Control assist class
 // Change handler to handle web sockets changes
 void changeHandler(uint8_t ndx){
   String key = ctrl[ndx].key;
-  if(key == "check_ctrl" ) 
+  if(key == "check_ctrl" )
     buttonState = ctrl["check_ctrl"].toInt();
   LOG_D("changeHandler: ndx: %02i, key: %s = %s\n",ndx, key.c_str(), ctrl[key].c_str());
 }
@@ -41,25 +41,25 @@ void setup() {
   Serial.begin(115200);
   Serial.print("\n\n\n\n");
   Serial.flush();
-  LOG_I("Starting..\n");  
-  
+  LOG_I("Starting..\n");
+
    // Connect WIFI ?
   if(strlen(st_ssid)>0){
     LOG_E("Connect Wifi to %s.\n", st_ssid);
     WiFi.mode(WIFI_STA);
     WiFi.begin(st_ssid, st_pass);
     uint32_t startAttemptTime = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 15000)  {
+    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 20000)  {
       Serial.print(".");
       delay(500);
       Serial.flush();
-    }  
+    }
     Serial.println();
-  } 
-  
+  }
+
   // Check connection
   if(WiFi.status() == WL_CONNECTED ){
-    LOG_I("Wifi AP SSID: %s connected, use 'http://%s' to connect\n", st_ssid, WiFi.localIP().toString().c_str()); 
+    LOG_I("Wifi AP SSID: %s connected, use 'http://%s' to connect\n", st_ssid, WiFi.localIP().toString().c_str());
   }else{
     LOG_E("Connect failed.\n");
     LOG_I("Starting AP.\n");
@@ -70,24 +70,24 @@ void setup() {
     if(WiFi.softAP(hostName.c_str(),"",8))
       LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());
     else
-      LOG_E("Wifi AP SSID: %s FAILED!\n", WiFi.softAPSSID().c_str());      
-    if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");     
+      LOG_E("Wifi AP SSID: %s FAILED!\n", WiFi.softAPSSID().c_str());
+    if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");
   }
 
-  
+
   // Control assist setup
   ctrl.setHtmlHeaders(HTML_HEADERS);
   ctrl.setHtmlBody(HTML_BODY);
   ctrl.bind("rssi");
   ctrl.bind("mem");
-  #if defined(ESP32)  
+  #if defined(ESP32)
   ctrl.bind("temp");
-  ctrl.bind("hall");  
+  ctrl.bind("hall");
   #else
   ctrl.bind("vcc");
-  ctrl.bind("hall");  
-  #endif  
-  // Every time a variable changed changeHandler will be called   
+  ctrl.bind("hall");
+  #endif
+  // Every time a variable changed changeHandler will be called
   ctrl.setGlobalCallback(changeHandler);
   // Add a web server handler on url "/"
   ctrl.setup(server);
@@ -97,7 +97,7 @@ void setup() {
   // Start web server
   server.begin();
   LOG_V("HTTP server started\n");
-  
+
 }
 #if defined(ESP32)
 int getMemPerc(){
@@ -108,7 +108,7 @@ int getMemPerc(){
 }
 #else
 int getMemPerc(){
-  uint32_t freeHeapBytes = ESP.getFreeHeap();  
+  uint32_t freeHeapBytes = ESP.getFreeHeap();
   uint32_t totalHeapBytes = 96000; //1060000; //ESP.getFlashChipSizeByChipId();
   float percentageHeapUsed = 100 - freeHeapBytes * 100.0f / (float)totalHeapBytes;
   return round(percentageHeapUsed);
@@ -117,15 +117,15 @@ int getMemPerc(){
 
 void loop() {
   // Update html control values
-  if (millis() - pingMillis >= DELAY_MS){  
+  if (millis() - pingMillis >= DELAY_MS){
     ctrl.put("rssi", String( WiFi.RSSI() ) );
-    ctrl.put("mem", String( getMemPerc() ) );    
-    #if defined(ESP32)    
-    ctrl.put("temp", String( ((temprature_sens_read() - 32) / 1.8), 1 )); 
+    ctrl.put("mem", String( getMemPerc() ) );
+    #if defined(ESP32)
+    ctrl.put("temp", String( ((temprature_sens_read() - 32) / 1.8), 1 ));
     ctrl.put("hall", String( hallRead() ) );
     #else
-    ctrl.put("vcc", String( ESP.getVcc() ));    
-    #endif    
+    ctrl.put("vcc", String( ESP.getVcc() ));
+    #endif
     buttonState = !buttonState;
     pingMillis = millis();
   }
