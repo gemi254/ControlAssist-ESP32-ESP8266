@@ -1,11 +1,11 @@
-// Setting to true will need to upload contents of /data 
+// Setting to true will need to upload contents of /data
 // directory to esp SPIFFS using image upload
 #define USE_SPIFFS_FOR_PAGES false
 
 #if defined(ESP32)
   #include <WebServer.h>
-  WebServer server(80);  
-  #include <ESPmDNS.h>  
+  WebServer server(80);
+  #include <ESPmDNS.h>
   #if not USE_SPIFFS_FOR_PAGES
     #define BODY_FILE_NAME "/src/ESPWroom32-Vis.html"
   #else
@@ -18,14 +18,14 @@
   ESP8266WebServer  server(80);
   #if not USE_SPIFFS_FOR_PAGES
     #include "gpioPMemESP8266.h"
-  #else      
-    #define BODY_FILE_NAME "/src/ESP8266Wemos-Vis.html"  
+  #else
+    #define BODY_FILE_NAME "/src/ESP8266Wemos-Vis.html"
   #endif
   #define TOTAL_PINS 17
 #endif
 
 #define LOGGER_LOG_LEVEL 5
-#include <WebSocketsServer.h> 
+#include <WebSocketsServer.h>
 #include <ControlAssist.h>                  // Control assist class
 
 ControlAssist ctrl(81);                     // Web socket control on port 81
@@ -46,12 +46,12 @@ void setLed(bool ledState){
   }else{
     digitalWrite(LED_BUILTIN, HIGH); // Turn LED OFF
     LOG_D("Led off\n");
-  }  
+  }
 }
 
 // A key is changed by web sockets
 void globalChangeHandler(uint8_t ndx){
-  LOG_N("globalChangeHandler ndx: %02u, key: '%s', val: %s\n", ndx, ctrl[ndx].key.c_str(), ctrl[ndx].val.c_str());  
+  LOG_N("globalChangeHandler ndx: %02u, key: '%s', val: %s\n", ndx, ctrl[ndx].key.c_str(), ctrl[ndx].val.c_str());
   if(ctrl[ndx].key == "led"){ // Led clicked in web page
     // Incoming message, Toggle led and dont send update
     setLed(ctrl[ndx].val.toInt());
@@ -64,7 +64,7 @@ void globalChangeHandler(uint8_t ndx){
     int pin = ctrl[ndx].key.toInt();
     LOG_I("Change pin GPIO%i: %s\n", pin, ctrl[ndx].val.c_str());
     // Set selected pin
-    pinMode(pin, OUTPUT);    
+    pinMode(pin, OUTPUT);
     digitalWrite(pin, ctrl[ndx].val.toInt());
     // On led toggle connected pin
     if(pin == LED_BUILTIN) ctrl.put("led", !ctrl[ndx].val.toInt() );
@@ -97,7 +97,7 @@ void readAllGpio(){
     String pin = String(i);
     if (i<10) pin = "0" + pin;
     ctrl.put(pin.c_str(), state, true);
-    
+
     // Click on build in led pin
     if(pin.toInt() == LED_BUILTIN){
       setLed(!state);
@@ -114,27 +114,27 @@ void setup() {
     Serial.println("An Error has occurred while mounting SPIFFS");
     return;
   }else{
-    LOG_I("Storage statred.\n");  
+    LOG_I("Storage statred.\n");
   }
-  LOG_I("Starting..\n");  
-  
+  LOG_I("Starting..\n");
+
   // Connect WIFI ?
   if(strlen(st_ssid)>0){
     LOG_D("Connect Wifi to %s.\n", st_ssid);
     WiFi.mode(WIFI_STA);
     WiFi.begin(st_ssid, st_pass);
     uint32_t startAttemptTime = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 15000)  {
+    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 20000)  {
       Serial.print(".");
       delay(500);
       Serial.flush();
-    }  
+    }
     Serial.println();
-  } 
-  
+  }
+
   // Check connection
   if(WiFi.status() == WL_CONNECTED ){
-    LOG_I("Wifi AP SSID: %s connected, use 'http://%s' to connect\n", st_ssid, WiFi.localIP().toString().c_str()); 
+    LOG_I("Wifi AP SSID: %s connected, use 'http://%s' to connect\n", st_ssid, WiFi.localIP().toString().c_str());
   }else{
     LOG_E("Connect failed.\n");
     LOG_I("Starting AP.\n");
@@ -143,8 +143,8 @@ void setup() {
     String hostName = "ControlAssist_" + mac.substring(6);
     WiFi.mode(WIFI_AP);
     WiFi.softAP(hostName.c_str(),"",1);
-    LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());      
-    if (MDNS.begin(hostName.c_str()))  LOG_I("AP MDNS responder Started\n");     
+    LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());
+    if (MDNS.begin(hostName.c_str()))  LOG_I("AP MDNS responder Started\n");
   }
 
   // Setup control assist
@@ -154,12 +154,12 @@ void setup() {
     ctrl.setHtmlBodyFile(BODY_FILE_NAME);
   #else
     ctrl.setHtmlBody(HTML_PAGE);
-  #endif 
+  #endif
   // Bind led
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH); // Turn LED OFF
   ctrl.bind("led", readGPIO(LED_BUILTIN));
-  
+
   // Bind all pins
   for(int i=0; i<TOTAL_PINS; ++i){
     String pin = String(i);
@@ -171,20 +171,20 @@ void setup() {
   ctrl.setAutoSendOnCon(true);
   // When a value is changed, globalChangeHandler will be called
   ctrl.setGlobalCallback(globalChangeHandler);
-  ctrl.begin();  
-  LOG_V("ControlAssist started.\n"); 
-  
-  // Setup webserver  
+  ctrl.begin();
+  LOG_V("ControlAssist started.\n");
+
+  // Setup webserver
   server.on("/d", []() { // Dump controls
     server.send(200, "text/plain", "Serial dump");
     ctrl.dump(&server);
 
   });
-  
-  // Start webserver  
+
+  // Start webserver
   server.begin();
   LOG_V("HTTP server started\n");
-  
+
 }
 
 void loop() {
@@ -203,7 +203,7 @@ void loop() {
   #endif
   // Handler webserver clients
   server.handleClient();
-  
+
   // Handle websockets
   ctrl.loop();
 }
