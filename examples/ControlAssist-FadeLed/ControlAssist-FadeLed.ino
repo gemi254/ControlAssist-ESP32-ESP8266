@@ -2,8 +2,8 @@
 #include <ControlAssist.h>            // Control assist class
 
 #if defined(ESP32)
-  WebServer server(80);  
-  #include <ESPmDNS.h>  
+  WebServer server(80);
+  #include <ESPmDNS.h>
 #else
   ESP8266WebServer  server(80);
   #include <ESP8266mDNS.h>
@@ -43,7 +43,7 @@ html, body {
   margin: 10px;
 }
 
-#led {  
+#led {
   width: calc(var(--elmSize) * 1.3);
   height: calc(var(--elmSize) * 1.3);
   #background-color: lightGray;
@@ -82,11 +82,11 @@ html, body {
 </style>
 <body>
 <div class="container">
-    <h1>Control Assist sample page</h1>
-</div>    
+    <h1>ControlAssist example</h1>
+</div>
 <div class="container">
     <div class="title">Fade led</div>
-</div>    
+</div>
 <div class="container">
     <div class="slider">
       <input title="Control onboard lamp led brightness" type="range" id="lampLevel" min="0" max="255" value="0">
@@ -100,20 +100,18 @@ html, body {
 </div>
 <div class="bottom">
   <div id="conLed" class="center"></div>
-  <span id="wsStatus" style="display: none;"></span>  
-</div> 
+  <span id="wsStatus" style="display: none;"></span>
+</div>
 <script>
 const led = document.getElementById("led"),
       lampLevel = document.getElementById("lampLevel"),
-      lampLevelValue = document.getElementById("lampLevelValue"),
-      wStatus = document.getElementById("wsStatus"),
-      conLed = document.getElementById("conLed")
-   
+      lampLevelValue = document.getElementById("lampLevelValue")
+
 const fadeLed = (val) => {
   lampLevelValue.innerHTML = val;
   led.style.opacity = val / 255 + .05;
 }
-//Change listener    
+//Change listener
 lampLevel.addEventListener("change", (event) => {
     fadeLed(event.target.value)
 });
@@ -126,13 +124,13 @@ lampLevel.addEventListener("wsChange", (event) => {
     fadeLed(event.target.value)
 });
 
-wStatus.addEventListener("change", (event) => {
-  if(event.target.innerHTML == "Connected"){
+document.getElementById("wsStatus").addEventListener("change", (event) => {
+  if(event.target.innerHTML.startsWith("Connected: ")){
     conLed.style.backgroundColor  = "lightgreen"
   }else if(event.target.innerHTML.startsWith("Error:")){
-    conLed.style.backgroundColor  = "lightred"    
+    conLed.style.backgroundColor  = "lightred"
   }else{
-    conLed.style.backgroundColor  = "lightgray"  
+    conLed.style.backgroundColor  = "lightgray"
   }
   conLed.title = event.target.innerHTML
 });
@@ -152,24 +150,24 @@ void setup() {
   Serial.begin(115200);
   Serial.print("\n\n\n\n");
   Serial.flush();
-  LOG_I("Starting..\n");  
-  // Connect WIFI ?  
+  LOG_I("Starting..\n");
+  // Connect WIFI ?
   if(strlen(st_ssid)>0){
     LOG_E("Connect Wifi to %s.\n", st_ssid);
     WiFi.mode(WIFI_STA);
     WiFi.begin(st_ssid, st_pass);
     uint32_t startAttemptTime = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 15000)  {
+    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 20000)  {
       Serial.print(".");
       delay(500);
       Serial.flush();
-    }  
+    }
     Serial.println();
-  } 
-  
+  }
+
   // Check connection
   if(WiFi.status() == WL_CONNECTED ){
-    LOG_I("Wifi AP SSID: %s connected, use 'http://%s' to connect\n", st_ssid, WiFi.localIP().toString().c_str()); 
+    LOG_I("Wifi AP SSID: %s connected, use 'http://%s' to connect\n", st_ssid, WiFi.localIP().toString().c_str());
   }else{
     LOG_E("Connect failed.\n");
     LOG_I("Starting AP.\n");
@@ -178,10 +176,10 @@ void setup() {
     String hostName = "ControlAssist_" + mac.substring(6);
     WiFi.mode(WIFI_AP_STA);
     WiFi.softAP(hostName.c_str(),"",1);
-    LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());      
-    if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");     
+    LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());
+    if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");
   }
-  
+
   // Setup control assist
   ctrl.setHtmlBody(HTML_BODY);
   ctrl.bind("lampLevel", ledLevel, lampLevel);
@@ -189,7 +187,7 @@ void setup() {
   ctrl.setAutoSendOnCon("lampLevel", true);
   // Add a web server handler on url "/"
   ctrl.setup(server);
-  // Start web sockets  
+  // Start web sockets
   ctrl.begin();
   LOG_V("ControlAssist started.\n");
 
@@ -200,7 +198,7 @@ void setup() {
   // Setup led
   pinMode(LED_BUILTIN, OUTPUT);
   analogWrite(LED_BUILTIN, 1024);
-  LOG_I("Setup Lamp Led for ESP8266 board\n"); 
+  LOG_I("Setup Lamp Led for ESP8266 board\n");
 }
 
 void loop() {
