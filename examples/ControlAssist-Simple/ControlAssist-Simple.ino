@@ -3,8 +3,8 @@
 
 #if defined(ESP32)
   WebServer server(80);
-  #include <ESPmDNS.h>  
-  #define ADC_PIN 36  
+  #include <ESPmDNS.h>
+  #define ADC_PIN 36
 #else
   ESP8266WebServer server(80);
   #include <ESP8266mDNS.h>
@@ -21,7 +21,7 @@ ControlAssist ctrl;                   // Control assist class
 
 PROGMEM const char HTML_BODY[] = R"=====(
 <body>
-<h1>Control Assist sample page</h1>
+<h1>ControlAssist sample page</h1>
 <table>
 <tr>
   <td>ADC value</td>
@@ -47,14 +47,14 @@ PROGMEM const char HTML_BODY[] = R"=====(
 </tr>
 <tr>
   <td>Wifi RSSI </td>
-  <td>Range control</td>  
+  <td>Range control</td>
   <td><input title="Range control" type="range" id="range_ctrl" name="range_ctrl" min="-120" max="0" value="0"></td>
 </tr>
 <tr>
   <td>User Button</td>
   <td>Button control</td>
   <td>
-    <button type="button" title="Button 1" id="button_ctrl">Button 1</button> 
+    <button type="button" title="Button 1" id="button_ctrl">Button 1</button>
   </td>
 </tr>
 </table>
@@ -64,7 +64,7 @@ PROGMEM const char HTML_BODY[] = R"=====(
 // Change handler to handle websockets changes
 void changeHandler(uint8_t ndx){
   String key = ctrl[ndx].key;
-  if(key == "check_ctrl" ) 
+  if(key == "check_ctrl" )
     buttonState = ctrl["check_ctrl"].toInt();
   LOG_D("changeHandler: ndx: %02i, key: %s = %s\n",ndx, key.c_str(), ctrl[key].c_str());
 }
@@ -73,25 +73,25 @@ void setup() {
   Serial.begin(115200);
   Serial.print("\n\n\n\n");
   Serial.flush();
-  LOG_I("Starting..\n");  
-  
+  LOG_I("Starting..\n");
+
    // Connect WIFI ?
   if(strlen(st_ssid)>0){
     LOG_E("Connect Wifi to %s.\n", st_ssid);
     WiFi.mode(WIFI_STA);
     WiFi.begin(st_ssid, st_pass);
     uint32_t startAttemptTime = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 15000)  {
+    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 20000)  {
       Serial.print(".");
       delay(500);
       Serial.flush();
-    }  
+    }
     Serial.println();
-  } 
-  
+  }
+
   // Check connection
   if(WiFi.status() == WL_CONNECTED ){
-    LOG_I("Wifi AP SSID: %s connected, use 'http://%s' to connect\n", st_ssid, WiFi.localIP().toString().c_str()); 
+    LOG_I("Wifi AP SSID: %s connected, use 'http://%s' to connect\n", st_ssid, WiFi.localIP().toString().c_str());
   }else{
     LOG_E("Connect failed.\n");
     LOG_I("Starting AP.\n");
@@ -100,57 +100,57 @@ void setup() {
     String hostName = "ControlAssist_" + mac.substring(6);
     WiFi.mode(WIFI_AP);
     WiFi.softAP(hostName.c_str(),"",1);
-    LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());      
-    if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");     
+    LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());
+    if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");
   }
 
-  
+
   // Control assist setup
   ctrl.setHtmlBody(HTML_BODY);
   ctrl.bind("span_ctrl");
   ctrl.bind("input_ctrl");
   ctrl.bind("text_ctrl");
-  ctrl.bind("check_ctrl");  
+  ctrl.bind("check_ctrl");
   ctrl.bind("range_ctrl");
   ctrl.bind("button_ctrl");
-  // Every time a variable changed changeHandler will be called   
+  // Every time a variable changed changeHandler will be called
   ctrl.setGlobalCallback(changeHandler);
   // Add a web server handler on url "/"
   ctrl.setup(server);
   // Start web sockets
   ctrl.begin();
   LOG_V("ControlAssist started.\n");
-   // Setup webserver  
-  server.on("/d", []() { // Dump controls    
+   // Setup webserver
+  server.on("/d", []() { // Dump controls
     ctrl.dump(&server);
   });
-  // Start webs server  
+  // Start webs server
   server.begin();
   LOG_V("HTTP server started\n");
-  
+
   pinMode(ADC_PIN, INPUT);
 }
 
 void loop() {
   // Change html control values
-  if (millis() - pingMillis >= 3000){  
+  if (millis() - pingMillis >= 3000){
     // Update control assist variables
     ctrl.put("span_ctrl", analogRead(ADC_PIN) );
     ctrl.put("input_ctrl", String(ESP.getCycleCount()));
     ctrl.put("text_ctrl",  chBuff);
     ctrl.put("check_ctrl", buttonState );
-    ctrl.put("range_ctrl", WiFi.RSSI() );    
-    ctrl.put("button_ctrl", buttonState );    
-#if defined(ESP32)    
+    ctrl.put("range_ctrl", WiFi.RSSI() );
+    ctrl.put("button_ctrl", buttonState );
+#if defined(ESP32)
     //ctrl.put("input_ctrl", String((temprature_sens_read() - 32) / 1.8 ) + " °C");
     sprintf(chBuff, "Memory Free: heap %u, block: %u, pSRAM %u", ESP.getFreeHeap(), heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL), ESP.getFreePsram());
 #else
     sprintf(chBuff,"Memory free heap: %u, stack: %u ,block: %u", ESP.getFreeHeap(), ESP.getFreeContStack(), ESP.getMaxFreeBlockSize());
-#endif        
+#endif
     buttonState = !buttonState;
     pingMillis = millis();
   }
-  
+
   #if not defined(ESP32)
     if(MDNS.isRunning()) MDNS.update(); // Handle MDNS
   #endif
