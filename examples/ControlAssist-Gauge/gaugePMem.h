@@ -1,10 +1,11 @@
-PROGMEM const char HTML_HEADERS[] = R"=====(    
+PROGMEM const char HTML_HEADERS[] = R"=====(
 <!DOCTYPE html>
 <html lang="en" >
 <head>
   <meta charset="UTF-8">
+  <link rel="shortcut icon" href="data:" />
   <title>ESP Monitor</title>
-<style>    
+<style>
 .center {
     position: absolute;
     top: 25%;
@@ -14,7 +15,7 @@ PROGMEM const char HTML_HEADERS[] = R"=====(
 }
 .container{
     display: flex;
-}    
+}
 .gauge {
     position: relative;
     border-radius: 50%/100% 100% 0 0;
@@ -46,38 +47,38 @@ PROGMEM const char HTML_HEADERS[] = R"=====(
     bottom: 0;
     right: -1px;
     background-color: var(--background, #aaa);
-    transform:rotate(var(--rotation)); 
-    transform-origin: bottom center; 
+    transform:rotate(var(--rotation));
+    transform-origin: bottom center;
     transition-duration: 600;
 }
 .gauge:hover {
     --rotation: 100deg;
 }
 .gauge .value {
-    position:absolute; bottom:17%; left:0;   
-    width:100%; 
+    position:absolute; bottom:17%; left:0;
+    width:100%;
     text-align: center;
     font-family:Verdana, Geneva, Tahoma, sans-serif;
     font-weight: bolder;
     font-size: 1.5rem;
 }
 .gauge  .title {
-    position:absolute; bottom:0; left:0;   
-    width:100%; 
+    position:absolute; bottom:0; left:0;
+    width:100%;
     text-align: center;
     font-family:Verdana, Geneva, Tahoma, sans-serif;
     font-weight: bold;
     font-size: .8rem;
 }
 .gauge .min {
-    position:absolute; 
-    bottom:0; left:5%;   
+    position:absolute;
+    bottom:0; left:5%;
 }
 .gauge .max {
-    position:absolute; 
-    bottom:0; right:5%;   
+    position:absolute;
+    bottom:0; right:5%;
  }
-</style> 
+</style>
 </head>
 )=====";
 
@@ -166,7 +167,7 @@ hall.ctrl.addEventListener("wsChange", (event) => {
     return false;
 });
 </script>
-</body>  
+</body>
 )=====";
 #else
 PROGMEM const char HTML_BODY[] = R"=====(
@@ -241,6 +242,6 @@ vcc.ctrl.addEventListener("wsChange", (event) => {
     return false;
 });
 </script>
-</body>  
+</body>
 )=====";
 #endif
