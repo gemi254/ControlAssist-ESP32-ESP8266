@@ -2,8 +2,8 @@
 #include <ControlAssist.h>            // Control assist class
 
 #if defined(ESP32)
-  WebServer server(80);  
-  #include <ESPmDNS.h>  
+  WebServer server(80);
+  #include <ESPmDNS.h>
 #else
   ESP8266WebServer  server(80);
   #include <ESP8266mDNS.h>
@@ -84,7 +84,7 @@ html, body {
   right: 0;
   bottom: 0;
   background: var(--toggleInactive);
-  width: calc(var(--elmSize) * 2.3);                      
+  width: calc(var(--elmSize) * 2.3);
   transition: .4s;
 }
 .slider:before {
@@ -117,11 +117,11 @@ input:checked + .slider:before {
 </style>
 <body>
     <div class="container">
-    <h1>Control Assist sample page</h1>
-</div>    
+    <h1>ControlAssist example page</h1>
+</div>
 <div class="container">
     <div class="switch-label">Toggle led</div>
-</div>    
+</div>
 <div class="container">
     <div class="switch">
         <input id="toggleLed" name="toggleLed" type="checkbox">
@@ -133,16 +133,14 @@ input:checked + .slider:before {
 <div class="bottom">
   <div id="conLed" class="center"></div>
   <span id="wsStatus" style="display: none;"></span>
-</div> 
+</div>
 <script>
 const led = document.getElementById("led"),
-      toggleLed = document.getElementById("toggleLed"),
-      wStatus = document.getElementById("wsStatus"),
-      conLed = document.getElementById("conLed")
+      toggleLed = document.getElementById("toggleLed");
 
 const changeLed = (v) => {
   if(!v) led.classList.remove("on");
-  else led.classList.add("on");    
+  else led.classList.add("on");
 }
 
 toggleLed.addEventListener("change", (event) => {
@@ -153,16 +151,16 @@ toggleLed.addEventListener("wsChange", (event) => {
   changeLed(event.target.checked);
 });
 
-wStatus.addEventListener("change", (event) => {
-  if(event.target.innerHTML == "Connected"){
+document.getElementById("wsStatus").addEventListener("change", (event) => {
+  if(event.target.innerHTML.startsWith("Connected: ")){
     event.target.style.color = "lightgreen"
     conLed.style.backgroundColor  = "lightgreen"
   }else if(event.target.innerHTML.startsWith("Error:")){
     event.target.style.color = "lightred"
-    conLed.style.backgroundColor  = "lightred"    
+    conLed.style.backgroundColor  = "lightred"
   }else{
     event.target.style.color = "lightgray"
-    conLed.style.backgroundColor  = "lightgray"  
+    conLed.style.backgroundColor  = "lightgray"
   }
   conLed.title = event.target.innerHTML
 });
@@ -190,7 +188,7 @@ void setup() {
   Serial.begin(115200);
   Serial.print("\n\n\n\n");
   Serial.flush();
-  LOG_I("Starting..\n");  
+  LOG_I("Starting..\n");
 
   // Connect WIFI ?
   if(strlen(st_ssid)>0){
@@ -198,17 +196,17 @@ void setup() {
     WiFi.mode(WIFI_STA);
     WiFi.begin(st_ssid, st_pass);
     uint32_t startAttemptTime = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 15000)  {
+    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 20000)  {
       Serial.print(".");
       delay(500);
       Serial.flush();
-    }  
+    }
     Serial.println();
-  } 
-  
+  }
+
   // Check connection
   if(WiFi.status() == WL_CONNECTED ){
-    LOG_I("Wifi AP SSID: %s connected, use 'http://%s' to connect\n", st_ssid, WiFi.localIP().toString().c_str()); 
+    LOG_I("Wifi AP SSID: %s connected, use 'http://%s' to connect\n", st_ssid, WiFi.localIP().toString().c_str());
   }else{
     LOG_E("Connect failed.\n");
     LOG_I("Starting AP.\n");
@@ -217,11 +215,11 @@ void setup() {
     String hostName = "ControlAssist_" + mac.substring(6);
     WiFi.mode(WIFI_AP_STA);
     WiFi.softAP(hostName.c_str(),"",1);
-    LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());      
-    if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");     
+    LOG_I("Wifi AP SSID: %s started, use 'http://%s' to connect\n", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());
+    if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");
   }
 
- 
+
   // Setup control assist
   ctrl.setHtmlBody(HTML_BODY);
   ctrl.bind("toggleLed", ledState, ledChangeHandler);
@@ -230,15 +228,15 @@ void setup() {
   // Add a web server handler on url "/"
   ctrl.setup(server);
   ctrl.begin();
-  ctrl.dump(); 
+  ctrl.dump();
   LOG_V("ControlAssist started.\n");
-  
+
   server.on("/d", []() { // Dump controls
     server.send(200, "text/plain", "Serial dump");
     ctrl.dump();
   });
 
-  // Start webserver  
+  // Start webserver
   server.begin();
   LOG_V("HTTP server started\n");
 
@@ -256,13 +254,13 @@ void loop() {
   // Handle websockets
   ctrl.loop();
 
-  if (millis() - pingMillis >= 5000){  
+  if (millis() - pingMillis >= 5000){
     ledState = !ledState;
     toggleLed(ledState);
     // Set the ledState and send a websocket update
     ctrl.put("toggleLed", ledState );
     pingMillis = millis();
-  }  
+  }
 }
 
 
