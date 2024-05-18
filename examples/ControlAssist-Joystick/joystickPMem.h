@@ -1,24 +1,23 @@
-PROGMEM const char HTML_HEADERS[] = R"=====(    
+PROGMEM const char HTML_HEADERS[] = R"=====(
 <!DOCTYPE html>
 <html>
 <head>
-    <title>
-        ESP joystick
-    </title>
     <meta name="viewport" content="user-scalable=no">
+    <link rel="shortcut icon" href="data:" />
+    <title>ESP joystick</title>
 </head>
 <style>
 body {
-    position: fixed; 
+    position: fixed;
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
     color:rgb(128, 128, 128);
     font-size: xx-large;
     user-select: none;
 }
 
-span { 
+span {
     display: inline-block;
-    min-width: 78px;     
+    min-width: 78px;
     text-align: left;
 }
 </style>
@@ -41,8 +40,8 @@ PROGMEM const char HTML_BODY[] = R"=====(
         window.addEventListener('load', () => {
 
             canvas = document.getElementById('canvas');
-            ctx = canvas.getContext('2d');          
-            resize(); 
+            ctx = canvas.getContext('2d');
+            resize();
 
             document.addEventListener('mousedown', startDrawing);
             document.addEventListener('mouseup', stopDrawing);
@@ -59,7 +58,7 @@ PROGMEM const char HTML_BODY[] = R"=====(
             setText('speed', "0")
             setText('angle', "0")
         });
-     
+
         var width, height, radius, x_orig, y_orig;
         function resize() {
             width = window.innerWidth;
@@ -115,10 +114,10 @@ PROGMEM const char HTML_BODY[] = R"=====(
                     elm.innerText += " %"
                 else if(key=="angle")
                     elm.innerText += " \u00B0"
-                var event = new Event('change');  
+                var event = new Event('change');
                 elm.dispatchEvent(event);
             }
-            
+
         }
 
         function startDrawing(event) {
@@ -137,7 +136,7 @@ PROGMEM const char HTML_BODY[] = R"=====(
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             background();
             joystick(width / 2, height / 3);
-            
+
             setText('x_coordinate', "0")
             setText('y_coordinate', "0")
             setText('speed', "0")
@@ -170,20 +169,20 @@ PROGMEM const char HTML_BODY[] = R"=====(
                     joystick(x, y);
                 }
 
-            
+
                 getPosition(event);
 
                 var speed =  Math.round(100 * Math.sqrt(Math.pow(x - x_orig, 2) + Math.pow(y - y_orig, 2)) / radius);
 
                 var x_relative = Math.round(x - x_orig);
                 var y_relative = Math.round(y - y_orig);
-                
+
                 setText('x_coordinate', x_relative)
                 setText('y_coordinate', y_relative)
                 setText('speed', speed)
                 setText('angle', angle_in_degrees)
             }
-        } 
+        }
     </script>
 </body>
 )=====";
