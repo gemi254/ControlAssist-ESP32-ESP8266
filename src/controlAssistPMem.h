@@ -123,7 +123,7 @@ function wsHeartBeat() {
 }
 // Connected
 function onWsOpen(event) {
-  setStatus("Connected")
+  setStatus("Connected: " + wsServer)
   wsHeartBeat();
 }
 // Handle websocket messages
@@ -199,7 +199,8 @@ PROGMEM const char CONTROLASSIST_HTML_HEADER[] = R"=====(
   <meta charset="utf-8">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"/>
-  <title>Control Assist</title>
+  <link rel="shortcut icon" href="data:" />
+  <title>ControlAssist</title>
 </head>
 )=====";
 //Template for body of the html page
