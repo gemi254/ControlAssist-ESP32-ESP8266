@@ -5,7 +5,8 @@ PROGMEM const char HTML_HEADERS[] = R"=====(
   <meta charset="utf-8">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"/>
-  <title>Control Assist</title>                        
+  <link rel="shortcut icon" href="data:" />
+  <title>ControlAssist</title>
 <style>
 html, body {
 	margin: 0;
@@ -26,7 +27,7 @@ html, body {
   width: 512px;
   text-align: center;
 }
-#canvas {	
+#canvas {
 	background-color: #181818;
 }
 #controls {
@@ -52,6 +53,13 @@ html, body {
 .on {
 	background-color: #49cb61;
 }
+.bottom {
+    position: relative;
+    top: 5px;
+    width: 100%;
+    font-size: x-small;
+    text-align: center;
+}
 </style>
 </head>
 )=====";
@@ -61,7 +69,7 @@ PROGMEM const char HTML_BODY[] = R"=====(
 <div id="container" class="center">
   <h3>ControlAssist Monitor ADC port</h3>
   <div id="controls">
-      <button id="on-off">Turn On</button>        
+      <button id="on-off">Turn On</button>
       <input type="text" id="adc_val" value="0" style="display:none;">
       <label for="speed">Delay: <span id="speedValue">40</span> ms</label>
       <input id="speed" type="range" min="0" max="1500" step="1" value="40">
@@ -69,6 +77,10 @@ PROGMEM const char HTML_BODY[] = R"=====(
       <input id="gain" type="range" min="0" max="5" step="0.05" value="1">
   </div>
   <canvas id="canvas"></canvas>
+  <div class="bottom">
+    <div id="conLed" class="center"></div>
+    <span id="wsStatus" style="display: none1;"></span>
+  </div>
 </div>
 </body>
 )=====";
@@ -86,7 +98,7 @@ const canvas = document.getElementById("canvas"),
     adc_val =  document.getElementById("adc_val"),
     dataArray = new Uint16Array(datBitCount);
 
-speed = speedSlider.value;    
+speed = speedSlider.value;
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 pixelRatio = window.devicePixelRatio;
@@ -108,7 +120,7 @@ segmentWidth = canvas.width / datBitCount;
 powerBtn.addEventListener("click", () => {
   if (isPlaying) {
     powerBtn.innerHTML = "Turn On";
-  } else {  
+  } else {
     powerBtn.innerHTML = "Turn Off";
   }
   powerBtn.classList.toggle("on");
@@ -123,11 +135,11 @@ powerBtn.addEventListener("wsChange", (event) => {
   if (isPlaying) {
     powerBtn.innerHTML = "Turn Off";
     powerBtn.classList.add("on");
-  } else {  
+  } else {
     powerBtn.innerHTML = "Turn On";
     powerBtn.classList.remove("on");
   }
-  if (isPlaying) draw();  
+  if (isPlaying) draw();
 });
 
 // Speed slider handlers
@@ -154,7 +166,7 @@ adc_val.addEventListener("wsChange", (event) => {
     return false;
 });
 
-const shiftRight = (collection, value) => { 
+const shiftRight = (collection, value) => {
   collection.set(collection.subarray(0, -1), 1)
   collection.fill(value, 0, 1)
   return collection;
@@ -165,14 +177,14 @@ const scale = (number, [inMin, inMax], [outMin, outMax]) => {
 }
 
 const draw = () => {
-  if(dbg) console.time("Draw");    
+  if(dbg) console.time("Draw");
   c.fillRect(0, 0, canvas.width, canvas.height);
   c.beginPath();
   c.moveTo(-100, canvas.height / 2);
- 
+
   if (isPlaying) {
     for (let i = 0; i < datBitCount; i += 1) {
-      let x = i * segmentWidth;      
+      let x = i * segmentWidth;
       let y = canvas.height - scale(dataArray[i],[0,4095], [0,canvas.height])
       c.lineTo(x, y);
     }
