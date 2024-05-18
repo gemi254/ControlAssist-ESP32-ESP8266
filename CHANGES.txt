@@ -1,5 +1,5 @@
 1.1.2 (2024-05-17)
-  * Removed sstrem
+  * Removed sstrem, Fixed errors
 
 1.1.1 (2024-01-19)
   * Fixed streamFile
