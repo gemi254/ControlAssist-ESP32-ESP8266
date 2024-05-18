@@ -5,7 +5,8 @@ PROGMEM const char CONTROLASSIST_HTML_HEADER[] = R"=====(
   <meta charset="utf-8">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"/>
-  <title>Control Assist</title>                        
+  <link rel="shortcut icon" href="data:" />
+  <title>ControlAssist</title>
 <style>
 body {
     background-color: black;
@@ -81,7 +82,7 @@ PROGMEM const char CONTROLASSIST_HTML_BODY[] = R"=====(
 <h1>Monitor all ESP adc pins</h1>
 <div class="center">
     <div id="controls">
-        <button id="on-off">Turn On</button>        
+        <button id="on-off">Turn On</button>
         <label for="speed">Delay: <span id="speedValue">40</span> ms</label>
         <input id="speed" type="range" min="0" max="1500" step="1" value="40">
         <label for="gain">Input Gain: <span id="gainValue">1</span></label>
@@ -113,8 +114,8 @@ PROGMEM const char CONTROLASSIST_HTML_FOOTER[] = R"=====(
 </div>
 </body>
 <script>
-let isPlaying = 0, 
-    gain = 1, 
+let isPlaying = 0,
+    gain = 1,
     speed = 40
 const powerBtn = document.getElementById("on-off"),
     speedSlider = document.getElementById("speed"),
@@ -124,7 +125,7 @@ const powerBtn = document.getElementById("on-off"),
 powerBtn.addEventListener("click", () => {
   if (isPlaying) {
     powerBtn.innerHTML = "Turn On";
-  } else {  
+  } else {
     powerBtn.innerHTML = "Turn Off";
   }
   powerBtn.classList.toggle("on");
@@ -138,10 +139,10 @@ powerBtn.addEventListener("wsChange", (event) => {
   if (isPlaying) {
     powerBtn.innerHTML = "Turn Off";
     powerBtn.classList.add("on");
-  } else {  
+  } else {
     powerBtn.innerHTML = "Turn On";
     powerBtn.classList.remove("on");
-  }  
+  }
 });
 
 // Gain slider handlers
@@ -184,7 +185,7 @@ class bar {
     this.ctrl.type = 'Custom'
   }
   update(v){
-    let perc = Math.ceil(scale(v, [this.min, this.max], [0,100]))    
+    let perc = Math.ceil(scale(v, [this.min, this.max], [0,100]))
     this.span.innerHTML = v;
     this.val.style.height = perc +'%';
   }
