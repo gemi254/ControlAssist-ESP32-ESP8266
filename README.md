@@ -2,7 +2,7 @@
 Multi-platform library for controlling html elements in a esp webpages at runtime using web sockets.
 
 ## Description
-A library allowing linking **html elements** to **sketch variables** on pages hosted on **esp32/esp8266** devices. It uses a **web socket server** on the esp **device** and a JavaScript **web socket client** implementation on the web **page** allowing bi-directional real-time communication between **device** and **page**. 
+A library allowing linking **html elements** to **sketch variables** on pages hosted on **esp32/esp8266** devices. It uses a **web socket server** on the esp **device** and a JavaScript **web socket client** implementation on the web **page** allowing bi-directional real-time communication between **device** and **page**.
 
 In a typical webpage, html **elements** like ``input box``, ``textbox``, ``range``, ``checkbox`` can be **binded** with ControlAssist internal variables using their unique **html ids** in order to associate their values. A **vectors** list will be generated to hold all associated element keys and their values.
 
@@ -38,7 +38,7 @@ PROGMEM const char HTML_FOOTER[] = R"=====(</htmll>)=====";
 You can also upload page html code sections to spiffs as a html files
 
 ## ControlAssist init functions
-Define and initialize you class 
+Define and initialize you class
 + include the **ControlAssist**  class
   - `#include <ControlAssist.h>  //ControlAssist class`
 
@@ -60,23 +60,29 @@ Define and initialize you class
   - `ctrl.setHtmlHeadersFile(HTML_HEADERS_FILENAME);`
   - `ctrl.setHtmlBodyFile(HTML_BODY_FILENAME);`
   - `ctrl.setHtmlFooterFile(HTML_SCRIPT_FILENAME);`
-  
+
      See example <a href="examples/ControlAssist-ESPVisualizer">ControlAssist-ESPVisualizer</a>
 
 + in your setup you must bind the html elements you want to control.
   - `ctrl.bind("html_id");` to link the html element
   - `ctrl.bind("html_id", start_value );` if you need to bind and init for sending on connection
   - `ctrl.bind("html_id", start_value, changeFunction);` if you need also to handle changes
-  
+
 + in your setup specify if you want ot auto send key initial values during web socket connection.
   - `ctrl.setAutoSendOnCon("html_id",true /* send: enable/disable */);`
   - `ctrl.put("html_id", value);  // Set a default value to be send`
 
 + Configure web server to handle control assist page on a uri
-  - ` ctrl.setup(server, "/");  // Add a web server handler on url "/"`
-
-+ Or define a custom web server handler to host your webpage
-  - `void handleRoot(){ ctrl.sendHtml(server); }`
+  - ``` // Setup webserver
+        server.on("/", []() {
+          server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+          String res = "";
+          res.reserve(CTRLASSIST_STREAM_CHUNKSIZE);
+          while( ctrl.getHtmlChunk(res)){
+            server.sendContent(res);
+          }
+        });
+    ```
 
 + If you want to use a global callback function to handle key changes
   - `ctrl.setGlobalCallback(globalChangeFuncion);`
@@ -97,7 +103,7 @@ Controlling your elements inside you loop function
 
 + Handle changes inside your code with a handler function
   - `void globalChangeFuncion(uint8_t ndx){  String key = ctrl[ndx].key; int val = ctrl[ndx].val.toInt() }`
-  
+
 + Inside your main loop() call ControlAssist loop() to handle web sockets server clients
   - `ctrl.loop();`
 
@@ -120,7 +126,7 @@ See example ``ControlAssist-Gauge.ino``
 </p>
 
 ## Logging and debugging with log level
-In you application you use **LOG_E**, **LOG_W**, **LOG_I**, **LOG_D** macros instead of **Serial.prinf** to print your messages. **ControlAssist** displays these messages with **timestamps** 
+In you application you use **LOG_E**, **LOG_W**, **LOG_I**, **LOG_D** macros instead of **Serial.prinf** to print your messages. **ControlAssist** displays these messages with **timestamps**
 
 You can define log level for each module
 ```#define LOGGER_LOG_LEVEL 4```
