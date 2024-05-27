@@ -2,29 +2,14 @@
 #define  _CONTROL_ASSIST_H
 
 #include <vector>
-#if defined(ESP32)
-  #include <WebServer.h>
-#else
-  #include <ESP8266WebServer.h>
-  #include <LittleFS.h>
-#endif
 #include <WebSocketsServer.h>
 
 #ifndef LOGGER_LOG_LEVEL
   #define LOGGER_LOG_LEVEL 4     // Set log level for this module
 #endif
 
-#define CT_CLASS_VERSION "1.1.2"        // Class version
-#define STREAM_CHUNKSIZE 256            // Stream file buffer size
-
-// Define Platform objects
-#ifndef WEB_SERVER
-  #if defined(ESP32)
-    #define WEB_SERVER WebServer
-  #else
-    #define WEB_SERVER ESP8266WebServer
-  #endif
-#endif
+#define CT_CLASS_VERSION "1.1.3"          // Class version
+#define CTRLASSIST_STREAM_CHUNKSIZE 2048  // Stream file buffer size
 
 #ifndef STORAGE
   #if defined(ESP32)
@@ -64,8 +49,6 @@ class ControlAssist{
   public:
     // Start web sockets server
     void begin();
-    // Setup web server handlers
-    void setup(WEB_SERVER &server, const char *uri = "/");
     // Set web sockets server listening port
     void setPort(uint16_t port) {if(!_wsEnabled)  _port = port; }
     // Bind a html control with id = key to a control variable
@@ -99,25 +82,27 @@ class ControlAssist{
     // Implement operator [] i.e. val = config[ndx]
     ctrlPairs operator [] (uint8_t ndx) { return _ctrls[ndx]; }
     // Return the val of a given key, Empty on not found
-    String getVal(String key);
+    String getVal(const String &key);
      // Return the position of given key
-    int getKeyNdx(String key);
+    int getKeyNdx(const String &key);
     // Return next key and value from configs on each call in key order
     bool getNextPair(ctrlPairs &c);
     // Add vectors by key (name in ctrlPairs)
-    size_t add(String key, String val);
+    size_t add(const String &key, const String &val);
     // Add vectors pairs
     size_t add(ctrlPairs &c);
     // Set the val at key index, (int)
     bool set(int keyNdx, int val, bool forceSend = false);
     // Set the val at key index, (string)
-    bool set(int keyNdx, String val, bool forceSend = false);
+    bool set(int keyNdx, const String &val, bool forceSend = false);
     // Put val (int) to Key. forcesend to false to send changes only, forceAdd to add it if not exists
-    bool put(String key, int val, bool forceSend = false, bool forceAdd = false);
+    bool put(const String &key, int val, bool forceSend = false, bool forceAdd = false);
     // Put val (string) to Key. forcesend to false to send changes only, forceAdd to add it if not exists
-    bool put(String key, String val, bool forceSend = false, bool forceAdd = false);
+    bool put(const String &key, const String &val, bool forceSend = false, bool forceAdd = false);
     // Display config items
-    void dump(WEB_SERVER *server = NULL);
+    //void dump(WEB_SERVER *server);
+    bool dump(String &res);
+
   public:
     // Sort vectors by key (name in confPairs)
     void sort();
@@ -125,21 +110,21 @@ class ControlAssist{
     void loop() { if(_socket) _socket->loop(); }
     // Get the initialization java script
     String getInitScript();
+    // Get a chunk from a html file
+    bool getFileChunk(const char *fname, String &res);
+    // Get a chunk from a html buffer
+    bool getStringChunk(const char *src, String &res);
     // Render html to client
-    void sendHtml(WEB_SERVER &server);
-    // Render html to client
-    void sendHtml() {sendHtml(*_server); };
+    bool getHtmlChunk(String &res);
     // Get number of connected clients
     uint8_t getClientsNum() { return _clientsNum; }
     // Set the auto send on ws connection flag on key
-    bool setAutoSendOnCon(String key, bool send);
+    bool setAutoSendOnCon(const String &key, bool send);
     // Set the auto send on ws connection flag on all keys
     void setAutoSendOnCon(bool send);
   private:
-    // Send a file from spiffs to client
-    void streamFile(WEB_SERVER &server, const char *htmlFile);
     // Load a file into text
-    bool loadText(String fPath, String &txt);
+    bool loadText(const String &fPath, String &txt);
     // Start websockets
     void startWebSockets();
     // Stop websockets
@@ -160,7 +145,6 @@ class ControlAssist{
     const char* _html_footer_file;
     uint16_t _port;
     bool _wsEnabled;
-    WEB_SERVER *_server;
     WebSocketsServer *_socket;
     WebSocketServerEventG _ev;
 };
