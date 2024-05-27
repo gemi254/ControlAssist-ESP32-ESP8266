@@ -192,8 +192,8 @@ document.addEventListener('DOMContentLoaded', function (event) {
 })
 )=====";
 //Template for header of the html page
-PROGMEM const char CONTROLASSIST_HTML_HEADER[] = R"=====(
-<!DOCTYPE HTML>
+PROGMEM const char CONTROLASSIST_HTML_HEADER[] =
+R"=====(<!DOCTYPE HTML>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -212,5 +212,4 @@ PROGMEM const char CONTROLASSIST_HTML_BODY[] = R"=====(
 )=====";
 //Template for footer of the html page
 PROGMEM const char CONTROLASSIST_HTML_FOOTER[] = R"=====(
-</html>
-)=====";
+</html>)=====";
