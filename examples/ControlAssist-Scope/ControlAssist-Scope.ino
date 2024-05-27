@@ -1,29 +1,39 @@
+#if defined(ESP32)
+  #include <ESPmDNS.h>
+  #include <WebServer.h>
+  #define WEB_SERVER WebServer
+  #define ADC_PIN 36
+#else
+  #include <ESP8266mDNS.h>
+  #include <ESP8266WebServer.h>
+  #define WEB_SERVER ESP8266WebServer
+  #define ADC_PIN A0
+#endif
+
 #define LOGGER_LOG_LEVEL 5            // Define log level for this module
 #include <ControlAssist.h>            // Control assist class
 
-#if defined(ESP32)
-  WebServer server(80);
-  #define ADC_PIN 36
-  #include <ESPmDNS.h>
-#else
-  ESP8266WebServer  server(80);
-  #define ADC_PIN A0
-  #include <ESP8266mDNS.h>
-#endif
-
-const char st_ssid[]="";                // Put connection SSID here. On empty an AP will be started
-const char st_pass[]="";                // Put your wifi passowrd.
+const char st_ssid[]="";              // Put connection SSID here. On empty an AP will be started
+const char st_pass[]="";              // Put your wifi passowrd.
 unsigned long pingMillis = millis();  // Ping millis
 bool isPlaying = false;
 unsigned long speed = 40;             // Read delay
 static int adc_pos = -1;
 
 #include "scopePMem.h"                // Program html code
-ControlAssist ctrl;                   // Control assist class
 
-// Web server handler
+ControlAssist ctrl;                   // Control assist class
+WEB_SERVER server(80);                // Web server on port 80
+
+// Web server root handler
 void handleRoot(){
-  ctrl.sendHtml(server);
+  server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  String res = "";
+  res.reserve(CTRLASSIST_STREAM_CHUNKSIZE);
+  while( ctrl.getHtmlChunk(res)){
+    server.sendContent(res);
+  }
+  server.sendContent("");
 }
 // Change handlers
 void changeOnOff(){
@@ -83,23 +93,30 @@ void setup() {
   // Store key position on adc_val for speed
   // Only on last bind call the position will be valid!
   adc_pos = ctrl.bind("adc_val");
-  // Add a web server handler on url "/"
-  ctrl.setup(server);
   // Start the server
   ctrl.begin();
   LOG_V("ControlAssist started.\n");
 
-  // Setup webserver
+  server.on("/", handleRoot);
+  // Dump binded controls handler
   server.on("/d", []() {
-    server.send(200, "text/plain", "Serial dump");
-    ctrl.dump();
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server.sendContent("Serial dump\n");
+    String res = "";
+    while( ctrl.dump(res) ){
+      server.sendContent(res);
+    }
   });
+
   server.begin();
   LOG_V("HTTP server started\n");
 #if defined(ESP32)
   pinMode(ADC_PIN, INPUT);
 #endif
-  //ctrl.dump();
+
+  // Dump binded controls to serial
+  String res;
+  while(ctrl.dump(res)) Serial.print(res);
 }
 
 void loop() { // Run repeatedly
