@@ -1,13 +1,15 @@
+#if defined(ESP32)
+  #include <ESPmDNS.h>
+  #include <WebServer.h>
+  #define WEB_SERVER WebServer
+#else
+  #include <ESP8266mDNS.h>
+  #include <ESP8266WebServer.h>
+  #define WEB_SERVER ESP8266WebServer
+#endif
+
 #define LOGGER_LOG_LEVEL 5            // Define log level for this module
 #include <ControlAssist.h>            // Control assist class
-
-#if defined(ESP32)
-  WebServer server(80);
-  #include <ESPmDNS.h>
-#else
-  ESP8266WebServer  server(80);
-  #include <ESP8266mDNS.h>
-#endif
 
 const char st_ssid[]="";                // Put connection SSID here. On empty an AP will be started
 const char st_pass[]="";                // Put your wifi passowrd.
@@ -17,7 +19,9 @@ bool ledState = false;
 #ifndef LED_BUILTIN
 #define LED_BUILTIN 22
 #endif
-ControlAssist ctrl;                     // Control assist class
+
+ControlAssist ctrl;                 // Control assist class
+WEB_SERVER server(80);              // Web server on port 80
 
 PROGMEM const char HTML_BODY[] = R"=====(
 <style>
@@ -219,21 +223,33 @@ void setup() {
     if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");
   }
 
-
   // Setup control assist
   ctrl.setHtmlBody(HTML_BODY);
   ctrl.bind("toggleLed", ledState, ledChangeHandler);
   // Auto send on connect
   ctrl.setAutoSendOnCon("toggleLed", true);
-  // Add a web server handler on url "/"
-  ctrl.setup(server);
   ctrl.begin();
-  ctrl.dump();
+  String res = "";
   LOG_V("ControlAssist started.\n");
 
-  server.on("/d", []() { // Dump controls
-    server.send(200, "text/plain", "Serial dump");
-    ctrl.dump();
+  // Setup webserver
+  server.on("/", []() {
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    String res = "";
+    res.reserve(CTRLASSIST_STREAM_CHUNKSIZE);
+    while( ctrl.getHtmlChunk(res)){
+      server.sendContent(res);
+    }
+  });
+
+  // Dump binded controls handler
+  server.on("/d", []() {
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server.sendContent("Serial dump\n");
+    String res = "";
+    while( ctrl.dump(res) ){
+      server.sendContent(res);
+    }
   });
 
   // Start webserver
@@ -242,6 +258,10 @@ void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH); // Turn LED OFF
+
+  // Dump binded controls to serial
+  while(ctrl.dump(res)) Serial.print(res);
+
 }
 
 
