@@ -1,3 +1,6 @@
+1.1.3 (2024-05-27)
+  * Removed webserver, added gthHtmlChunk for webserver handlers
+
 1.1.2 (2024-05-17)
   * Removed sstrem, Fixed errors
 
