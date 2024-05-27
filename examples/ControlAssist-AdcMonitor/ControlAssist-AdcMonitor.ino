@@ -1,14 +1,15 @@
+#if defined(ESP32)
+  #include <ESPmDNS.h>
+  #include <WebServer.h>
+  #define WEB_SERVER WebServer
+#else
+  #include <ESP8266mDNS.h>
+  #include <ESP8266WebServer.h>
+  #define WEB_SERVER ESP8266WebServer
+#endif
 
 #define LOGGER_LOG_LEVEL 5            // Define log level for this module
 #include <ControlAssist.h>            // Control assist class
-
-#if defined(ESP32)
-  WebServer server(80);
-  #include <ESPmDNS.h>
-#else
-  ESP8266WebServer  server(80);
-  #include <ESP8266mDNS.h>
-#endif
 
 #include "adcMonitorPmem.h"                 // Html page Program mem
 
@@ -26,7 +27,9 @@ int adcPins[] ={ 39, 38, 37, 36, 35, 34, 33, 32};
 int adcPins[] ={ 0 };
 #endif
 
-ControlAssist ctrl; // Control assist class
+ControlAssist ctrl;                 // Control assist class
+WEB_SERVER server(80);              // Web server on port 80
+
 static int ctrlsNdx[ sizeof(adcPins) / sizeof(int) ]; // Array of control indexes
 
 // Init adc ports
@@ -123,15 +126,28 @@ void setup() {
   ctrl.setAutoSendOnCon(true);
   // Init and bind all pins
   initAdcadcPins();
-  // Add a web server handler on url "/"
-  ctrl.setup(server);
+
   // Start web sockets
   ctrl.begin();
   LOG_I("ControlAssist started.\n");
-   // Setup webserver
+
+  // Add a web server handler on url "/"
+  server.on("/", []() {
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    String res = "";
+    res.reserve(CTRLASSIST_STREAM_CHUNKSIZE);
+    while( ctrl.getHtmlChunk(res)){
+      server.sendContent(res);
+    }
+  });
+  // Dump binded controls handler
   server.on("/d", []() {
-    server.send(200, "text/plain", "Serial dump");
-    ctrl.dump();
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server.sendContent("Serial dump\n");
+    String res = "";
+    while( ctrl.dump(res) ){
+      server.sendContent(res);
+    }
   });
    // Start webserver
   server.begin();
