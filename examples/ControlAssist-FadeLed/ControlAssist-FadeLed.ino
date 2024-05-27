@@ -1,13 +1,15 @@
+#if defined(ESP32)
+  #include <ESPmDNS.h>
+  #include <WebServer.h>
+  #define WEB_SERVER WebServer
+#else
+  #include <ESP8266mDNS.h>
+  #include <ESP8266WebServer.h>
+  #define WEB_SERVER ESP8266WebServer
+#endif
+
 #define LOGGER_LOG_LEVEL 5            // Define log level for this module
 #include <ControlAssist.h>            // Control assist class
-
-#if defined(ESP32)
-  WebServer server(80);
-  #include <ESPmDNS.h>
-#else
-  ESP8266WebServer  server(80);
-  #include <ESP8266mDNS.h>
-#endif
 
 const char st_ssid[]="";              // Put connection SSID here. On empty an AP will be started
 const char st_pass[]="";              // Put your wifi passowrd.
@@ -18,7 +20,9 @@ unsigned long pingMillis = millis();  // Ping millis
 #endif
 
 int ledLevel = 0;
-ControlAssist ctrl;                   // Control assist class
+ControlAssist ctrl;                 // Control assist class
+WEB_SERVER server(80);              // Web server on port 80
+
 
 PROGMEM const char HTML_BODY[] = R"=====(
 <style>
@@ -185,11 +189,29 @@ void setup() {
   ctrl.bind("lampLevel", ledLevel, lampLevel);
   // Auto send on connect
   ctrl.setAutoSendOnCon("lampLevel", true);
-  // Add a web server handler on url "/"
-  ctrl.setup(server);
   // Start web sockets
   ctrl.begin();
   LOG_V("ControlAssist started.\n");
+
+  // Setup webserver
+  server.on("/", []() {
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    String res = "";
+    res.reserve(CTRLASSIST_STREAM_CHUNKSIZE);
+    while( ctrl.getHtmlChunk(res)){
+      server.sendContent(res);
+    }
+  });
+
+  // Dump binded controls handler
+  server.on("/d", []() {
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server.sendContent("Serial dump\n");
+    String res = "";
+    while( ctrl.dump(res) ){
+      server.sendContent(res);
+    }
+  });
 
   // Setup webserver
   server.begin();
@@ -199,6 +221,10 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   analogWrite(LED_BUILTIN, 1024);
   LOG_I("Setup Lamp Led for ESP8266 board\n");
+
+  // Dump binded controls to serial
+  String res="";
+  while(ctrl.dump(res)) Serial.print(res);
 }
 
 void loop() {

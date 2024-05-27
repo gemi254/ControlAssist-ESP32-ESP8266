@@ -1,11 +1,23 @@
+
+#if defined(ESP32)
+  #include <ESPmDNS.h>
+  #include <WebServer.h>
+  #include "SPIFFS.h"
+  #define STORAGE SPIFFS    // Storage SPIFFS
+  #define WEB_SERVER WebServer
+#else
+  #include <ESP8266WebServer.h>
+  #include <LittleFS.h>
+  #include <ESP8266mDNS.h>
+  #define STORAGE LittleFS  // Storage LittleFS
+  #define WEB_SERVER ESP8266WebServer
+#endif
+
 // Setting to true will need to upload contents of /data
 // directory to esp SPIFFS using image upload
 #define USE_SPIFFS_FOR_PAGES false
 
 #if defined(ESP32)
-  #include <WebServer.h>
-  WebServer server(80);
-  #include <ESPmDNS.h>
   #if not USE_SPIFFS_FOR_PAGES
     #define BODY_FILE_NAME "/src/ESPWroom32-Vis.html"
   #else
@@ -13,21 +25,19 @@
   #endif
   #define TOTAL_PINS 40
 #else
-  #include <ESP8266mDNS.h>
-  #include <ESP8266WebServer.h>
-  ESP8266WebServer  server(80);
   #if not USE_SPIFFS_FOR_PAGES
     #include "gpioPMemESP8266.h"
   #else
     #define BODY_FILE_NAME "/src/ESP8266Wemos-Vis.html"
+    //#define BODY_FILE_NAME "/src/test.html"
   #endif
   #define TOTAL_PINS 17
 #endif
 
 #define LOGGER_LOG_LEVEL 5
-#include <WebSocketsServer.h>
 #include <ControlAssist.h>                  // Control assist class
 
+WEB_SERVER server(80);
 ControlAssist ctrl(81);                     // Web socket control on port 81
 
 const char st_ssid[]="";                    // Put connection SSID here. On empty an AP will be started
@@ -92,20 +102,38 @@ int readGPIO(int pinNo ) { //0-17
 
 // Read the state of all available pins
 void readAllGpio(){
-  for(uint i=00; i<TOTAL_PINS; i++){
+  for(uint i=0; i<TOTAL_PINS; i++){
     int state = readGPIO(i);
     String pin = String(i);
     if (i<10) pin = "0" + pin;
     ctrl.put(pin.c_str(), state, true);
 
-    // Click on build in led pin
+    /* Click on build in led pin
     if(pin.toInt() == LED_BUILTIN){
       setLed(!state);
       ctrl.put("led", !state);
     }
+    */
   }
 }
-
+void listAllFilesInDir(String dir_path)
+{
+	Dir dir = LittleFS.openDir(dir_path);
+	while(dir.next()) {
+		if (dir.isFile()) {
+			// print file names
+			Serial.print("File: ");
+			Serial.println(dir_path + dir.fileName() + " : " + dir.fileSize());
+		}
+		if (dir.isDirectory()) {
+			// print directory names
+			Serial.print("Dir: ");
+			Serial.println(dir_path + dir.fileName() + "/");
+			// recursive file listing inside new directory
+			listAllFilesInDir(dir_path + dir.fileName() + "/");
+		}
+	}
+}
 void setup() {
   Serial.begin(115200);
   Serial.print("\n\n\n\n");
@@ -117,7 +145,7 @@ void setup() {
     LOG_I("Storage statred.\n");
   }
   LOG_I("Starting..\n");
-
+  listAllFilesInDir("/");
   // Connect WIFI ?
   if(strlen(st_ssid)>0){
     LOG_D("Connect Wifi to %s.\n", st_ssid);
@@ -147,8 +175,6 @@ void setup() {
     if (MDNS.begin(hostName.c_str()))  LOG_I("AP MDNS responder Started\n");
   }
 
-  // Setup control assist
-  ctrl.setup(server, "/");
   // Use default CONTROLASSIST_HTML_HEADER and CONTROLASSIST_HTML_FOOTER
   #if USE_SPIFFS_FOR_PAGES
     ctrl.setHtmlBodyFile(BODY_FILE_NAME);
@@ -175,10 +201,25 @@ void setup() {
   LOG_V("ControlAssist started.\n");
 
   // Setup webserver
-  server.on("/d", []() { // Dump controls
-    server.send(200, "text/plain", "Serial dump");
-    ctrl.dump(&server);
+  server.on("/", []() {
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    String res = "";
+    res.reserve(CTRLASSIST_STREAM_CHUNKSIZE);
+    while( ctrl.getHtmlChunk(res)){
+      server.sendContent(res);
+    }
+    server.sendContent("");
+  });
 
+  // Dump binded controls handler
+  server.on("/d", []() {
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server.sendContent("Serial dump\n");
+    String res = "";
+    while( ctrl.dump(res) ){
+      server.sendContent(res);
+    }
+    server.sendContent("");
   });
 
   // Start webserver
