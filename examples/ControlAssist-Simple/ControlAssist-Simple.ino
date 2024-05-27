@@ -1,23 +1,27 @@
-#define LOGGER_LOG_LEVEL 5            // Define log level for this module
-#include <ControlAssist.h>            // Control assist class
-
 #if defined(ESP32)
-  WebServer server(80);
   #include <ESPmDNS.h>
+  #include <WebServer.h>
+  #define WEB_SERVER WebServer
   #define ADC_PIN 36
 #else
-  ESP8266WebServer server(80);
   #include <ESP8266mDNS.h>
+  #include <ESP8266WebServer.h>
+  #define WEB_SERVER ESP8266WebServer
   #define ADC_PIN A0
 #endif
 
+#define LOGGER_LOG_LEVEL 5            // Define log level for this module
+#include <ControlAssist.h>            // Control assist class
+
 const char st_ssid[]="";              // Put connection SSID here. On empty an AP will be started
-const char st_pass[]="";              // Put your wifi passowrd.
+const char st_pass[]="";              // Put your wifi password.
 unsigned long pingMillis = millis();  // Ping millis
 
 char chBuff[128];
 static bool buttonState = false;
+
 ControlAssist ctrl;                   // Control assist class
+WEB_SERVER server(80);                // Web server on port 80
 
 PROGMEM const char HTML_BODY[] = R"=====(
 <body>
@@ -115,14 +119,28 @@ void setup() {
   ctrl.bind("button_ctrl");
   // Every time a variable changed changeHandler will be called
   ctrl.setGlobalCallback(changeHandler);
-  // Add a web server handler on url "/"
-  ctrl.setup(server);
+
   // Start web sockets
   ctrl.begin();
   LOG_V("ControlAssist started.\n");
-   // Setup webserver
-  server.on("/d", []() { // Dump controls
-    ctrl.dump(&server);
+  // Setup webserver
+  server.on("/", []() {
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    String res = "";
+    res.reserve(CTRLASSIST_STREAM_CHUNKSIZE);
+    while( ctrl.getHtmlChunk(res)){
+      server.sendContent(res);
+    }
+  });
+
+  // Dump binded controls handler
+  server.on("/d", []() {
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server.sendContent("Serial dump\n");
+    String res = "";
+    while( ctrl.dump(res) ){
+      server.sendContent(res);
+    }
   });
   // Start webs server
   server.begin();
