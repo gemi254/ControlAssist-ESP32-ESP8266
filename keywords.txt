@@ -27,6 +27,6 @@ setHtmlBodyFile KEYWORD2
 setHtmlFooterFile KEYWORD2
 getInitScript KEYWORD2
 setGlobalCallback KEYWORD2
-sendHtml KEYWORD2
 getClientsNum KEYWORD2
-streamFile KEYWORD2
+getHtmlChunk KEYWORD2
+
