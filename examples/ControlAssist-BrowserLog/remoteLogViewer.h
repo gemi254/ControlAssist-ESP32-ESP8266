@@ -1,10 +1,10 @@
 /*  A web remote debugger using ControlAssist web sockets */
 #if !defined(_REMOTE_LOG_VIEWER_H)
-#define  _REMOTE_LOG_VIEWER_H 
+#define  _REMOTE_LOG_VIEWER_H
 
 PROGMEM const char LOGGER_VIEWER_HTML_BODY[] = R"=====(
 <style>
-:root { 
+:root {
   --errColor: red;
   --warnColor: orange;
   --infoColor: green;
@@ -40,7 +40,7 @@ logLine.addEventListener("wsChange", (event) => {
   }else{
     logText.innerHTML += toColor( event.target.value );
   }
-  
+
   if(isScrollBottom())
     window.scrollTo({ left: 0, top: document.body.scrollHeight, behavior: "smooth" });
 });
@@ -48,7 +48,7 @@ logLine.addEventListener("wsChange", (event) => {
 const isScrollBottom = () => {
   let documentHeight = document.body.scrollHeight;
   let currentScroll = window.scrollY + window.innerHeight;
-  let snap = 10; 
+  let snap = 10;
   if(currentScroll + snap > documentHeight) {
      return true;
   }
@@ -87,25 +87,24 @@ class RemoteLogViewer: public ControlAssist{
     RemoteLogViewer(uint16_t port) { ControlAssist::setPort(port);  _logBuffer = ""; }
     virtual ~RemoteLogViewer() { }
   public:
-    void setup(WEB_SERVER &server, const char *uri = "/log"){
+    void setup(){
       // Must not initalized
       if(pLogView){
         LOG_E("Already initialized with addr: %p\n", pLogView);
         return;
       }
       // Store this instance pointer to global
-      pLogView = this; 
+      pLogView = this;
       // Setup control assist
       ControlAssist::setHtmlBody(LOGGER_VIEWER_HTML_BODY);
       ControlAssist::setHtmlFooter(LOGGER_VIEWER_HTML_SCRIPT);
-      ControlAssist::setup(server, uri);
-      ControlAssist::bind("logLine");      
-    }  
+      ControlAssist::bind("logLine");
+    }
 
-    // Custom log print function 
+    // Custom log print function
     void print(String line){
-      // Are clients connected?      
-      if(ControlAssist::getClientsNum()>0){ 
+      // Are clients connected?
+      if(ControlAssist::getClientsNum()>0){
         if(_logBuffer!=""){
             String logLine = "";
             int l = 0;
@@ -114,20 +113,20 @@ class RemoteLogViewer: public ControlAssist{
                 if(l < 0) break;
                 logLine = _logBuffer.substring(0, l - 1 );
                 ControlAssist::put("logLine", logLine );
-                _logBuffer = _logBuffer.substring(l + 1 , _logBuffer.length() );                
+                _logBuffer = _logBuffer.substring(l + 1 , _logBuffer.length() );
             }
             _logBuffer = "";
-        } 
+        }
         ControlAssist::put("logLine", line, true);
       }else{ // No clientsm store to _logBuffer
         // Contains \n by default
         _logBuffer += String(line);
         //if(_logBuffer.length()) _logBuffer += " (" + String(_logBuffer.length()) +")";
-      } 
+      }
       // Truncate buffer on oversize
       if(_logBuffer.length() > MAX_LOG_BUFFER_LEN){
         int l = _logBuffer.indexOf("\n", 0);
-        if(l >= 0) 
+        if(l >= 0)
             _logBuffer = _logBuffer.substring(l + 1, _logBuffer.length() - 1);
       }
     }
@@ -142,14 +141,14 @@ static char outBuf[512];                    // Output buffer
 static va_list arglist;
 
 // Custom log print function.. Prints on pLogView instance
-void _log_printf(const char *format, ...){  
+void _log_printf(const char *format, ...){
   strncpy(fmtBuf, format, MAX_LOG_FMT);
   fmtBuf[MAX_LOG_FMT - 1] = 0;
-  va_start(arglist, format);  
+  va_start(arglist, format);
   vsnprintf(outBuf, MAX_LOG_FMT, fmtBuf, arglist);
   va_end(arglist);
   Serial.print(outBuf);
-  if(pLogView) pLogView->print(outBuf);     
+  if(pLogView) pLogView->print(outBuf);
 }
 
 #endif
