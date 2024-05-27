@@ -1,23 +1,28 @@
+#if defined(ESP32)
+  #include <ESPmDNS.h>
+  #include <WebServer.h>
+  #define WEB_SERVER WebServer
+#else
+  #include <ESP8266mDNS.h>
+  #include <ESP8266WebServer.h>
+  #define WEB_SERVER ESP8266WebServer
+#endif
+
+const char st_ssid[]="";                // Put connection SSID here. On empty an AP will be started
+const char st_pass[]="";                // Put your wifi passowrd.
+unsigned long pingMillis = millis();    // Ping millis
+
+
 #define LOGGER_LOG_MODE  3              // Set default logging mode using external function
 #define LOGGER_LOG_LEVEL 5              // Define log level for this module
 static void _log_printf(const char *format, ...);  // Custom log function, defined in weblogger.h
 
 #include <ControlAssist.h>              // Control assist class
-
-#if defined(ESP32)
-  #include <ESPmDNS.h>
-  WebServer server(80);
-#else
-  #include <ESP8266mDNS.h>
-  ESP8266WebServer  server(80);
-#endif
-
 #include "remoteLogViewer.h"            // Web based remote log page using web sockets
+
+WEB_SERVER server(80);                  // Web server on port 80
 RemoteLogViewer remoteLogView(85);      // The remote live log viewer page
 
-const char st_ssid[]="";                // Put connection SSID here. On empty an AP will be started
-const char st_pass[]="";                // Put your wifi passowrd.
-unsigned long pingMillis = millis();    // Ping millis
 
 // Log debug info
 void debugMemory(const char* caller) {
@@ -35,7 +40,7 @@ void setup() {
 
   // Setup the remote web debugger in order to store log lines, url "/log"
   // When no connection is present store log lines in a buffer until connection
-  remoteLogView.setup(server);
+  remoteLogView.setup();
 
   LOG_I("Starting..\n");
   // Connect WIFI ?
@@ -74,7 +79,16 @@ void setup() {
   // Setup webserver
   server.on("/", []() {
     server.send(200, "text/html", "<h1>This is root page</h1><br><a target='_new' href='/log'>View log</a>");
-    remoteLogView.dump();
+  });
+
+  // Setup log handler
+  server.on("/log", []() {
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    String res = "";
+    while( remoteLogView.getHtmlChunk(res) ){
+      server.sendContent(res);
+    }
+    server.sendContent("");
   });
 
   // Start webserver
