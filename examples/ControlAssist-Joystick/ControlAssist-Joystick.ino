@@ -1,12 +1,15 @@
-#include <ControlAssist.h>            // Control assist class
-
 #if defined(ESP32)
-  WebServer server(80);
   #include <ESPmDNS.h>
+  #include <WebServer.h>
+  #define WEB_SERVER WebServer
 #else
-  ESP8266WebServer  server(80);
   #include <ESP8266mDNS.h>
+  #include <ESP8266WebServer.h>
+  #define WEB_SERVER ESP8266WebServer
 #endif
+
+#define LOGGER_LOG_LEVEL 5            // Define log level for this module
+#include <ControlAssist.h>            // Control assist class
 
 const char st_ssid[]="";              // Put connection SSID here. On empty an AP will be started
 const char st_pass[]="";              // Put your wifi passowrd.
@@ -14,7 +17,8 @@ unsigned long pingMillis = millis();  // Ping millis
 
 #include "joystickPMem.h"
 
-ControlAssist ctrl;                   //Control assist class
+ControlAssist ctrl;                   // Control assist class
+WEB_SERVER server(80);                // Web server on port 80
 
 // Change handlers
 void xChange(){
@@ -77,16 +81,23 @@ void setup() {
   ctrl.bind("speed", speedChange);
   ctrl.bind("angle", angleChange);
 
-  // Add a web server handler on url "/"
-  ctrl.setup(server);
   // Start web sockets
   ctrl.begin();
   LOG_I("ControlAssist started.\n");
 
+  // Add a web server handler on url "/"
+  server.on("/", []() {
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    String res = "";
+    res.reserve(CTRLASSIST_STREAM_CHUNKSIZE);
+    while( ctrl.getHtmlChunk(res)){
+      server.sendContent(res);
+    }
+  });
+
   // Start web server
   server.begin();
   LOG_I("HTTP server started\n");
-
 }
 
 void loop() {

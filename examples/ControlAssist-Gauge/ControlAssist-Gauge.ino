@@ -1,6 +1,3 @@
-#define LOGGER_LOG_LEVEL 5            // Define log level for this module
-#include <ControlAssist.h>            // Control assist class
-
 #if defined(ESP32)
   #ifdef __cplusplus
   extern "C" {
@@ -10,13 +7,18 @@
   }
   #endif
   uint8_t temprature_sens_read();
-  WebServer server(80);
   #include <ESPmDNS.h>
+  #include <WebServer.h>
+  #define WEB_SERVER WebServer
 #else
-  ESP8266WebServer  server(80);
   #include <ESP8266mDNS.h>
-  ADC_MODE(ADC_VCC);
+  #include <ESP8266WebServer.h>
+  #define WEB_SERVER ESP8266WebServer
 #endif
+
+
+#define LOGGER_LOG_LEVEL 5            // Define log level for this module
+#include <ControlAssist.h>            // Control assist class
 
 const char st_ssid[]="";             // Put connection SSID here. On empty an AP will be started
 const char st_pass[]="";             // Put your wifi passowrd.
@@ -25,6 +27,8 @@ unsigned long pingMillis = millis(); // Ping millis
 char chBuff[128];
 static bool buttonState = false;
 #define DELAY_MS 1000               // Measurements delay
+
+WEB_SERVER server(80);              // Web server on port 80
 ControlAssist ctrl;                 // Control assist class
 
 #include "gaugePMem.h"              // Program html code definitions
@@ -36,6 +40,22 @@ void changeHandler(uint8_t ndx){
     buttonState = ctrl["check_ctrl"].toInt();
   LOG_D("changeHandler: ndx: %02i, key: %s = %s\n",ndx, key.c_str(), ctrl[key].c_str());
 }
+
+#if defined(ESP32)
+int getMemPerc(){
+  uint32_t freeHeapBytes = heap_caps_get_free_size(MALLOC_CAP_DEFAULT);
+  uint32_t totalHeapBytes = heap_caps_get_total_size(MALLOC_CAP_DEFAULT);
+  float percentageHeapUsed = 100 - freeHeapBytes * 100.0f / (float)totalHeapBytes;
+  return round(percentageHeapUsed);
+}
+#else
+int getMemPerc(){
+  uint32_t freeHeapBytes = ESP.getFreeHeap();
+  uint32_t totalHeapBytes = 96000; //1060000; //ESP.getFlashChipSizeByChipId();
+  float percentageHeapUsed = 100 - freeHeapBytes * 100.0f / (float)totalHeapBytes;
+  return round(percentageHeapUsed);
+}
+#endif
 
 void setup() {
   Serial.begin(115200);
@@ -81,39 +101,40 @@ void setup() {
   ctrl.bind("rssi");
   ctrl.bind("mem");
   #if defined(ESP32)
-  ctrl.bind("temp");
-  ctrl.bind("hall");
+    ctrl.bind("temp");
+    ctrl.bind("hall");
   #else
-  ctrl.bind("vcc");
-  ctrl.bind("hall");
+    ctrl.bind("vcc");
+    ctrl.bind("hall");
   #endif
   // Every time a variable changed changeHandler will be called
   ctrl.setGlobalCallback(changeHandler);
   // Add a web server handler on url "/"
-  ctrl.setup(server);
+
   ctrl.begin();
   LOG_V("ControlAssist started.\n");
+  // Setup webserver
+  server.on("/", []() {
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    String res = "";
+    while( ctrl.getHtmlChunk(res)){
+      server.sendContent(res);
+    }
+  });
 
+  // Dump binded controls handler
+  server.on("/d", []() {
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server.sendContent("Serial dump\n");
+    String res = "";
+    while( ctrl.dump(res) ){
+      server.sendContent(res);
+    }
+  });
   // Start web server
   server.begin();
   LOG_V("HTTP server started\n");
-
 }
-#if defined(ESP32)
-int getMemPerc(){
-  uint32_t freeHeapBytes = heap_caps_get_free_size(MALLOC_CAP_DEFAULT);
-  uint32_t totalHeapBytes = heap_caps_get_total_size(MALLOC_CAP_DEFAULT);
-  float percentageHeapUsed = 100 - freeHeapBytes * 100.0f / (float)totalHeapBytes;
-  return round(percentageHeapUsed);
-}
-#else
-int getMemPerc(){
-  uint32_t freeHeapBytes = ESP.getFreeHeap();
-  uint32_t totalHeapBytes = 96000; //1060000; //ESP.getFlashChipSizeByChipId();
-  float percentageHeapUsed = 100 - freeHeapBytes * 100.0f / (float)totalHeapBytes;
-  return round(percentageHeapUsed);
-}
-#endif
 
 void loop() {
   // Update html control values
