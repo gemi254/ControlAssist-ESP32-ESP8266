@@ -270,6 +270,12 @@ int ControlAssist::bind(const char* key, const char* val, WebSocketServerEvent e
   return getKeyNdx(key);
 }
 
+bool ControlAssist::sendSystemMsg(const String &msg){
+  String m = String("0\t") + msg;
+  return _socket->broadcastTXT(m);
+}
+
+
 // Add a global callback function to handle changes
 void ControlAssist::setGlobalCallback(WebSocketServerEventG ev){
   _ev = ev;
@@ -406,7 +412,7 @@ bool ControlAssist::getFileChunk(const char *fname, String &res){
       return false;
     }else{ // Open the file
       #if defined(ESP32)
-        File f = STORAGE.open(fname);
+        f = STORAGE.open(fname);
       #else
         f = STORAGE.open(String(fname), "r");
       #endif
