@@ -8,7 +8,7 @@
   #define LOGGER_LOG_LEVEL 4     // Set log level for this module
 #endif
 
-#define CT_CLASS_VERSION "1.1.3"          // Class version
+#define CT_CLASS_VERSION "1.1.4"          // Class version
 #define CTRLASSIST_STREAM_CHUNKSIZE 2048  // Stream file buffer size
 
 #ifndef STORAGE
@@ -99,8 +99,9 @@ class ControlAssist{
     bool put(const String &key, int val, bool forceSend = false, bool forceAdd = false);
     // Put val (string) to Key. forcesend to false to send changes only, forceAdd to add it if not exists
     bool put(const String &key, const String &val, bool forceSend = false, bool forceAdd = false);
+    // Send system message. (Connection close)
+    bool sendSystemMsg(const String &msg);
     // Display config items
-    //void dump(WEB_SERVER *server);
     bool dump(String &res);
 
   public:
