@@ -126,14 +126,25 @@ function onWsOpen(event) {
   setStatus("Connected: " + wsServer)
   wsHeartBeat();
 }
+function handleSysMessage(msg){
+  if(msg=="C"){
+    if(dbg) console.log("Rcv close conn")
+    closeWS();
+  }
+}
 // Handle websocket messages
 function handleWsMessage(msg){
   //Split only first tab
   var p = msg.indexOf("\t", 0)
   const chn = parseInt( msg.substr(0, p) );
-  if(chn < 1 || ndxToElm.length < 1) return;
+  if(chn < 0 || ndxToElm.length < 1) return;
 
   const val = msg.substr(p+1, msg.length - 1)
+  if(chn == 0){
+    handleSysMessage(val);
+    return;
+  }
+
   const ndx = chn - 1;
   const elm = ndxToElm[ ndx ];
 
@@ -175,7 +186,7 @@ function onWsClose(event) {
   //   1006 if server not available, or another web page is already open
   //   1005 if closed from app
   if (event.code == 1006) {
-    console.log("Closed websocket as a newer connection was made");
+    console.log("Closed ws as a newer conn was made");
     initWebSocket();
   }else if (event.code != 1005) initWebSocket(); // retry if any other reason
 }
