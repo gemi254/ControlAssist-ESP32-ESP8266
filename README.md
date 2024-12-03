@@ -129,7 +129,11 @@ See example ``ControlAssist-Gauge.ino``
 In you application you use **LOG_E**, **LOG_W**, **LOG_I**, **LOG_D** macros instead of **Serial.prinf** to print your messages. **ControlAssist** displays these messages with **timestamps**
 
 You can define log level for each module
-```#define LOGGER_LOG_LEVEL 4```
+```
+#define LOGGER_LOG_LEVEL 4
+or
+build_flags = -DLOGGER_LOG_LEVEL=5
+```
 ```
 #define _LOG_LEVEL_NONE      (0)
 #define _LOG_LEVEL_ERROR     (1)
@@ -143,8 +147,9 @@ You can define log level for each module
 Download library files and place them on ./libraries directory under ArduinoProjects
 Then include the **ControlAssist.h** in your application and compile..
 
-+ compile for arduino-esp3 or arduino-esp8266.
++ Compile for arduino-esp32 or arduino-esp8266.
 + In order to compile you must install **WebSocketsServer** library.
++ Use compiler flags build_flags = -DCA_USE_LITTLEFS to use LITTLEFS instead of SPIFFS
 
 
 ###### If you get compilation errors on arduino-esp32 you need to update your arduino-esp32 library in the IDE using Boards Manager
