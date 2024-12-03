@@ -1,3 +1,7 @@
+#undef LOGGER_LOG_LEVEL
+#define LOGGER_LOG_LEVEL 3     // Set log level for this module
+
+
 #include "ControlAssist.h"     // Control assist class
 #include "controlAssistPMem.h" // Memory static valiables (html pages)
 
@@ -22,7 +26,7 @@ ControlAssist::ControlAssist(uint16_t port)
 
 // Start websockets
 void ControlAssist::begin(){
-  if(!_wsEnabled){
+  if(!_wsEnabled && WiFi.isConnected()){
     startWebSockets();
     _wsEnabled = true;
   }
