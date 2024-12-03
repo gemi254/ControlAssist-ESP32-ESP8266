@@ -8,16 +8,16 @@
   #define LOGGER_LOG_LEVEL 4     // Set log level for this module
 #endif
 
-#define CT_CLASS_VERSION "1.1.4"          // Class version
+#define CT_CLASS_VERSION "1.1.5"          // Class version
 #define CTRLASSIST_STREAM_CHUNKSIZE 2048  // Stream file buffer size
 
-#ifndef STORAGE
-  #if defined(ESP32)
-    #include "SPIFFS.h"
-    #define STORAGE SPIFFS    // Storage SPIFFS
-  #else
+#if !defined(STORAGE)
+  #if defined(ESP8266) || defined(CA_USE_LITTLEFS)
     #include <LittleFS.h>
-    #define STORAGE LittleFS  // Storage LittleFS
+    #define STORAGE LittleFS // one of: SPIFFS LittleFS SD_MMC
+  #else
+    #include "SPIFFS.h"
+    #define STORAGE SPIFFS // SPIFFS
   #endif
 #endif
 
