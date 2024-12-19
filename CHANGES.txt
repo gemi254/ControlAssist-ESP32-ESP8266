@@ -1,3 +1,6 @@
+1.1.5 (2024-12-24)
+  * Use littleFS
+  * Added log file in BrowserLog example
 1.1.4 (2024-07-24)
   * Added sendSystemMsg to send connection close messages
 
