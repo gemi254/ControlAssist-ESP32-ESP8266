@@ -6,7 +6,7 @@
         "type": "git",
         "url": "https://github.com/gemi254/ControlAssist-ESP32-ESP8266.git"
     },
-    "version": "1.1.4",
+    "version": "1.1.5",
     "homepage": "https://github.com/gemi254/ControlAssist-ESP32-ESP8266",
     "examples": "examples/*/*.ino",
     "frameworks": "arduino",
