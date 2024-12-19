@@ -105,23 +105,24 @@ class RemoteLogViewer: public ControlAssist{
     void print(String line){
       // Are clients connected?
       if(ControlAssist::getClientsNum()>0){
-        if(_logBuffer!=""){
+        if(_logBuffer != ""){
             String logLine = "";
             int l = 0;
+            // Send log buffer lines
             while(_logBuffer.length() > 0){
                 l = _logBuffer.indexOf("\n", 0);
                 if(l < 0) break;
-                logLine = _logBuffer.substring(0, l - 1 );
+                logLine = _logBuffer.substring(0, l );
                 ControlAssist::put("logLine", logLine );
                 _logBuffer = _logBuffer.substring(l + 1 , _logBuffer.length() );
             }
             _logBuffer = "";
         }
+        // Send current line
         ControlAssist::put("logLine", line, true);
-      }else{ // No clientsm store to _logBuffer
+      }else{ // No clients store line to _logBuffer
         // Contains \n by default
         _logBuffer += String(line);
-        //if(_logBuffer.length()) _logBuffer += " (" + String(_logBuffer.length()) +")";
       }
       // Truncate buffer on oversize
       if(_logBuffer.length() > MAX_LOG_BUFFER_LEN){
@@ -131,7 +132,7 @@ class RemoteLogViewer: public ControlAssist{
       }
     }
   public:
-    String _logBuffer;
+    String _logBuffer;                      // String buffer to hold log lines
 };
 
 // Log print arguments
@@ -139,6 +140,7 @@ class RemoteLogViewer: public ControlAssist{
 static char fmtBuf[MAX_LOG_FMT];            // Format buffer
 static char outBuf[512];                    // Output buffer
 static va_list arglist;
+static File log_file;
 
 // Custom log print function.. Prints on pLogView instance
 void _log_printf(const char *format, ...){
@@ -149,6 +151,10 @@ void _log_printf(const char *format, ...){
   va_end(arglist);
   Serial.print(outBuf);
   if(pLogView) pLogView->print(outBuf);
+  if(log_file){
+    log_file.print(outBuf);
+    log_file.flush();
+  }
 }
 
 #endif
