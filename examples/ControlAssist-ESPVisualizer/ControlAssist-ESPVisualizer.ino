@@ -2,33 +2,30 @@
 #if defined(ESP32)
   #include <ESPmDNS.h>
   #include <WebServer.h>
-  #include "SPIFFS.h"
-  #define STORAGE SPIFFS    // Storage SPIFFS
   #define WEB_SERVER WebServer
 #else
   #include <ESP8266WebServer.h>
   #include <LittleFS.h>
   #include <ESP8266mDNS.h>
-  #define STORAGE LittleFS  // Storage LittleFS
   #define WEB_SERVER ESP8266WebServer
 #endif
 
 // Setting to true will need to upload contents of /data
 // directory to esp SPIFFS using image upload
-#define USE_SPIFFS_FOR_PAGES false
+#define USE_STORAGE_FOR_PAGES false
 
 #if defined(ESP32)
-  #if not USE_SPIFFS_FOR_PAGES
+  #if USE_STORAGE_FOR_PAGES
     #define BODY_FILE_NAME "/src/ESPWroom32-Vis.html"
   #else
     #include "gpioPMemESP32.h"
   #endif
   #define TOTAL_PINS 40
 #else
-  #if not USE_SPIFFS_FOR_PAGES
-    #include "gpioPMemESP8266.h"
-  #else
+  #if USE_STORAGE_FOR_PAGES
     #define BODY_FILE_NAME "/src/ESP8266Wemos-Vis.html"
+  #else
+    #include "gpioPMemESP8266.h"
     //#define BODY_FILE_NAME "/src/test.html"
   #endif
   #define TOTAL_PINS 17
@@ -116,36 +113,35 @@ void readAllGpio(){
     */
   }
 }
-void listAllFilesInDir(String dir_path)
-{
-	Dir dir = LittleFS.openDir(dir_path);
-	while(dir.next()) {
-		if (dir.isFile()) {
-			// print file names
-			Serial.print("File: ");
-			Serial.println(dir_path + dir.fileName() + " : " + dir.fileSize());
-		}
-		if (dir.isDirectory()) {
-			// print directory names
-			Serial.print("Dir: ");
-			Serial.println(dir_path + dir.fileName() + "/");
-			// recursive file listing inside new directory
-			listAllFilesInDir(dir_path + dir.fileName() + "/");
-		}
-	}
+// List the storage file system
+void ListDir(const char * dirname) {
+  LOG_I("Listing directory: %s\n", dirname);
+  // List details of files on file system
+  File root = STORAGE.open(dirname, "r");
+  File file = root.openNextFile();
+  while (file) {
+    #if defined(ESP32)
+      LOG_I("File: %s, size: %u B\n", file.path(), file.size());
+    #else
+      LOG_I("File: %s, size: %u B\n", file.fullName(), file.size());
+    #endif
+    file = root.openNextFile();
+  }
+  Serial.println("");
 }
+
 void setup() {
   Serial.begin(115200);
   Serial.print("\n\n\n\n");
   Serial.flush();
   if (!STORAGE.begin()) {
-    Serial.println("An Error has occurred while mounting SPIFFS");
+    LOG_E("An Error has occurred while mounting SPIFFS\n");
     return;
   }else{
     LOG_I("Storage statred.\n");
   }
   LOG_I("Starting..\n");
-  listAllFilesInDir("/");
+  ListDir("/");
   // Connect WIFI ?
   if(strlen(st_ssid)>0){
     LOG_D("Connect Wifi to %s.\n", st_ssid);
@@ -176,7 +172,7 @@ void setup() {
   }
 
   // Use default CONTROLASSIST_HTML_HEADER and CONTROLASSIST_HTML_FOOTER
-  #if USE_SPIFFS_FOR_PAGES
+  #if USE_STORAGE_FOR_PAGES
     ctrl.setHtmlBodyFile(BODY_FILE_NAME);
   #else
     ctrl.setHtmlBody(HTML_PAGE);
