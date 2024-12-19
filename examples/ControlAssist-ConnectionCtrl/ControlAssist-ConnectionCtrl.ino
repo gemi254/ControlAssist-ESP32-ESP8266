@@ -13,8 +13,8 @@
 #define LOGGER_LOG_LEVEL 5            // Define log level for this module
 #include <ControlAssist.h>            // Control assist class
 
-const char st_ssid[]="mdk3";                    // Put connection SSID here. On empty an AP will be started
-const char st_pass[]="2843028858";                    // Put your wifi passowrd.
+const char st_ssid[]="";                 // Put connection SSID here. On empty an AP will be started
+const char st_pass[]="";                 // Put your wifi passowrd.
 unsigned long pingMillis = millis();     // Ping millis
 unsigned long disconnMillis = millis();  // Wifi disconnect millis
 
