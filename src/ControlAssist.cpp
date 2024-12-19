@@ -26,7 +26,7 @@ ControlAssist::ControlAssist(uint16_t port)
 
 // Start websockets
 void ControlAssist::begin(){
-  if(!_wsEnabled && WiFi.isConnected()){
+  if(!_wsEnabled && (WiFi.isConnected() || WiFi.softAPSSID() != "" )){
     startWebSockets();
     _wsEnabled = true;
   }
