@@ -12,10 +12,16 @@ const char st_ssid[]="";                // Put connection SSID here. On empty an
 const char st_pass[]="";                // Put your wifi passowrd.
 unsigned long pingMillis = millis();    // Ping millis
 
-
 #define LOGGER_LOG_MODE  3              // Set default logging mode using external function
 #define LOGGER_LOG_LEVEL 5              // Define log level for this module
 static void _log_printf(const char *format, ...);  // Custom log function, defined in weblogger.h
+
+#define LOG_TO_FILE true                // Set to false to disable log file
+
+#if (LOG_TO_FILE)
+    #define LOGGER_OPEN_LOG()  if(!log_file) log_file = STORAGE.open(LOGGER_LOG_FILENAME, "a+")
+    #define LOGGER_CLOSE_LOG() if(log_file) log_file.close()
+#endif
 
 #include <ControlAssist.h>              // Control assist class
 #include "remoteLogViewer.h"            // Web based remote log page using web sockets
@@ -23,13 +29,13 @@ static void _log_printf(const char *format, ...);  // Custom log function, defin
 WEB_SERVER server(80);                  // Web server on port 80
 RemoteLogViewer remoteLogView(85);      // The remote live log viewer page
 
+uint32_t loopNo = 0;
 
-// Log debug info
 void debugMemory(const char* caller) {
   #if defined(ESP32)
-    LOG_D("%s > Free: heap %u, block: %u, pSRAM %u\n", caller, ESP.getFreeHeap(), heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL), ESP.getFreePsram());
+    LOG_D("%s %i> Free: heap %u, block: %u, pSRAM %u\n", caller, ++loopNo, ESP.getFreeHeap(), heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL), ESP.getFreePsram());
   #else
-    LOG_D("%s > Free: heap %u\n", caller, ESP.getFreeHeap());
+    LOG_D("%s %i > Free: heap %u\n", caller, ++loopNo, ESP.getFreeHeap());
   #endif
 }
 
@@ -37,6 +43,16 @@ void setup() {
   Serial.begin(115200);
   Serial.print("\n\n\n\n");
   Serial.flush();
+
+#if (LOG_TO_FILE)
+  if (!STORAGE.begin()) {
+    Serial.println("An Error has occurred while mounting SPIFFS");
+    return;
+  }else{
+    Serial.println("Storage statred.");
+  }
+  LOGGER_OPEN_LOG();
+#endif
 
   // Setup the remote web debugger in order to store log lines, url "/log"
   // When no connection is present store log lines in a buffer until connection
@@ -72,7 +88,7 @@ void setup() {
     if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");
   }
 
-  // Start web lgo viewer sockets
+  // Start web log viewer sockets
   remoteLogView.begin();
   LOG_I("RemoteLogViewer started.\n");
 
@@ -90,7 +106,34 @@ void setup() {
     }
     server.sendContent("");
   });
-
+#if (LOG_TO_FILE)
+  // Setup log file vire handler
+  server.on("/logFile", []() {
+    if(server.hasArg("reset")){
+      LOG_W("Reseting log\n");
+      LOGGER_CLOSE_LOG();
+      STORAGE.remove(LOGGER_LOG_FILENAME);
+      server.sendContent("Reseted log");
+      // Reopen log file to store log lines
+      LOGGER_OPEN_LOG();
+      return;
+    }
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    LOGGER_CLOSE_LOG();
+    // Open for reading
+    File file = STORAGE.open(LOGGER_LOG_FILENAME, "r");
+    // Send log file contents
+    String res = "";
+    while( file.available() ){
+      res = file.readStringUntil('\n') + "\n";
+      server.sendContent(res);
+    }
+    file.close();
+    server.sendContent("");
+    // Reopen log file to store log lines
+    LOGGER_OPEN_LOG();
+  });
+#endif
   // Start webserver
   server.begin();
   LOG_V("HTTP server started\n");
