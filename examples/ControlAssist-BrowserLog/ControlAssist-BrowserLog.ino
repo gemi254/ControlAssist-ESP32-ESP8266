@@ -8,25 +8,21 @@
   #define WEB_SERVER ESP8266WebServer
 #endif
 
-const char st_ssid[]="";                // Put connection SSID here. On empty an AP will be started
-const char st_pass[]="";                // Put your wifi passowrd.
+const char st_ssid[]="mdk3";                // Put connection SSID here. On empty an AP will be started
+const char st_pass[]="2843028858";                // Put your wifi passowrd.
 unsigned long pingMillis = millis();    // Ping millis
 
 #define LOGGER_LOG_MODE  3              // Set default logging mode using external function
 #define LOGGER_LOG_LEVEL 5              // Define log level for this module
 static void _log_printf(const char *format, ...);  // Custom log function, defined in weblogger.h
 
-#define LOG_TO_FILE true                // Set to false to disable log file
-
-#if (LOG_TO_FILE)
-    #define LOGGER_OPEN_LOG()  if(!log_file) log_file = STORAGE.open(LOGGER_LOG_FILENAME, "a+")
-    #define LOGGER_CLOSE_LOG() if(log_file) log_file.close()
-#endif
+bool logToFile = true;                  // Set to false to disable log file
 
 #include <ControlAssist.h>              // Control assist class
 #include "remoteLogViewer.h"            // Web based remote log page using web sockets
 
 WEB_SERVER server(80);                  // Web server on port 80
+
 RemoteLogViewer remoteLogView(85);      // The remote live log viewer page
 
 uint32_t loopNo = 0;
@@ -44,19 +40,19 @@ void setup() {
   Serial.print("\n\n\n\n");
   Serial.flush();
 
-#if (LOG_TO_FILE)
-  if (!STORAGE.begin()) {
-    Serial.println("An Error has occurred while mounting SPIFFS");
-    return;
-  }else{
-    Serial.println("Storage statred.");
+  if(logToFile){
+    if (!STORAGE.begin()) {
+      Serial.println("An Error has occurred while mounting SPIFFS");
+      return;
+    }else{
+      Serial.println("Storage statred.");
+    }
+    LOGGER_OPEN_LOG();
   }
-  LOGGER_OPEN_LOG();
-#endif
 
   // Setup the remote web debugger in order to store log lines, url "/log"
   // When no connection is present store log lines in a buffer until connection
-  remoteLogView.setup();
+  remoteLogView.init();
 
   LOG_I("Starting..\n");
   // Connect WIFI ?
@@ -88,52 +84,23 @@ void setup() {
     if (MDNS.begin(hostName.c_str()))  LOG_V("AP MDNS responder Started\n");
   }
 
-  // Start web log viewer sockets
+
   remoteLogView.begin();
   LOG_I("RemoteLogViewer started.\n");
 
   // Setup webserver
   server.on("/", []() {
-    server.send(200, "text/html", "<h1>This is root page</h1><br><a target='_new' href='/log'>View log</a>");
+    server.send(200, "text/html", "<h1>This is root page</h1><br><a target='_new' href='/log'>View log</a>&nbsp;&nbsp;<a target='_new' href='/logFile'>View log file</a>&nbsp;&nbsp;<a target='_new' href='/logFile?reset=1'>Reset log file</a>");
   });
 
-  // Setup log handler
-  server.on("/log", []() {
-    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
-    String res = "";
-    while( remoteLogView.getHtmlChunk(res) ){
-      server.sendContent(res);
-    }
-    server.sendContent("");
+  server.on("/log", []() {             // Setup log handler
+    remoteLogView.handleLog(server);
   });
-#if (LOG_TO_FILE)
-  // Setup log file vire handler
-  server.on("/logFile", []() {
-    if(server.hasArg("reset")){
-      LOG_W("Reseting log\n");
-      LOGGER_CLOSE_LOG();
-      STORAGE.remove(LOGGER_LOG_FILENAME);
-      server.sendContent("Reseted log");
-      // Reopen log file to store log lines
-      LOGGER_OPEN_LOG();
-      return;
-    }
-    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
-    LOGGER_CLOSE_LOG();
-    // Open for reading
-    File file = STORAGE.open(LOGGER_LOG_FILENAME, "r");
-    // Send log file contents
-    String res = "";
-    while( file.available() ){
-      res = file.readStringUntil('\n') + "\n";
-      server.sendContent(res);
-    }
-    file.close();
-    server.sendContent("");
-    // Reopen log file to store log lines
-    LOGGER_OPEN_LOG();
+
+  server.on("/logFile", []() {         // Setup log file handler
+    remoteLogView.handleLogFile(server);
   });
-#endif
+
   // Start webserver
   server.begin();
   LOG_V("HTTP server started\n");
