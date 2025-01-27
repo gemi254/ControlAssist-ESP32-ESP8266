@@ -8,7 +8,7 @@
   #define LOGGER_LOG_LEVEL 4     // Set log level for this module
 #endif
 
-#define CT_CLASS_VERSION "1.1.5"          // Class version
+#define CT_CLASS_VERSION "1.1.6"          // Class version
 #define CTRLASSIST_STREAM_CHUNKSIZE 2048  // Stream file buffer size
 
 #if !defined(STORAGE)
