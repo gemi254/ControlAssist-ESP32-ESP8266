@@ -95,7 +95,8 @@ Define and initialize you class
 ## ControlAssist control functions
 Controlling your elements inside you loop function
 
-+ Change the values of html elements
++ Change the values of html elements. 
+
   - `ctrl.put("html_id", value,  /* forceSend: send even no change */, /* forceAdd: add key if not exists */ );`
 
 + Read current value of html element
@@ -106,6 +107,8 @@ Controlling your elements inside you loop function
 
 + Inside your main loop() call ControlAssist loop() to handle web sockets server clients
   - `ctrl.loop();`
+
+##### Note that when a html control is "binded" (linked to some backend variable), the library checks whether the new value in ctrl.put differs from the previous send or initial value. If there’s no change, ControlAssist by default does not resend the same value to conserve bandwidth. You can use ``forceSend`` in ctrl.put to send even no change. This optimization is particularly important in applications where frequent updates could lead to performance bottlenecks or excessive network usage (e.g., sliders, real-time monitoring systems, or IoT dashboards).
 
 
 ## JavaScript handlers inside your webpage
