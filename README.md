@@ -68,7 +68,7 @@ Define and initialize you class
   - `ctrl.bind("html_id", start_value );` if you need to bind and init for sending on connection
   - `ctrl.bind("html_id", start_value, changeFunction);` if you need also to handle changes
 
-+ in your setup specify if you want ot auto send key initial values during web socket connection.
++ in your setup specify if you want to auto send key initial values during web socket connection.
   - `ctrl.setAutoSendOnCon("html_id",true /* send: enable/disable */);`
   - `ctrl.put("html_id", value);  // Set a default value to be send`
 
@@ -108,7 +108,7 @@ Controlling your elements inside you loop function
 + Inside your main loop() call ControlAssist loop() to handle web sockets server clients
   - `ctrl.loop();`
 
-##### Note that when a html control is "binded" (linked to some backend variable), the library checks whether the new value in ctrl.put differs from the previous send or initial value. If there’s no change, ControlAssist by default does not resend the same value to conserve bandwidth. You can use ``forceSend`` in ctrl.put to send even no change. This optimization is particularly important in applications where frequent updates could lead to performance bottlenecks or excessive network usage (e.g., sliders, real-time monitoring systems, or IoT dashboards).
+##### Note that when a html control is "binded" (linked to some backend variable), the library checks whether the new value in ctrl.put differs from the previous send or initial value. If there’s no change, ControlAssist by default does not resend the same value to conserve bandwidth. You can use ``forceSend`` in ctrl.put to send even if there is no change. This optimization is particularly important in applications where frequent updates could lead to performance bottlenecks or excessive network usage (e.g., sliders, real-time monitoring systems, or IoT dashboards).
 
 
 ## JavaScript handlers inside your webpage
